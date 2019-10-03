@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login via cookies</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="topnav">
+        <a href="./login">Login</a>
+        <a href="./logout">Logout</a>
+    </div>
+<div>
+    <h1>Manual login</h1>
+    {% block form %}
+    {% endblock %}
+</div>
+</body>
+</html>
