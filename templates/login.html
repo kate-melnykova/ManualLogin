@@ -3,7 +3,10 @@
 {% block form %}
     <fieldset>
     <form>
-
+        {{ loginform.csrf }}
+        <p> {{ loginform.username.label }}: {{ loginform.username(class="css_class") }}</p>
+        <p> {{ loginform.password.label }}: {{ loginform.password(class="css_class") }}</p>
+        <p style="text-align: center;"><input type="submit" name="submit" value="submit"></p>
     </form>
 
     </fieldset>
