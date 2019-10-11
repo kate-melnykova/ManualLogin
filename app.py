@@ -9,12 +9,14 @@ from wtforms import StringField
 from wtforms import PasswordField, BooleanField
 from wtforms import validators
 
+from auth import crypting
+
 domain_address = 'http://127.0.0.1:5000'
 
 
 class LoginForm(Form):
-    username = StringField('Username', [validators.Length(min=4, max=25)])
-    password = PasswordField('Password', [validators.Length(min=6, max=35)])
+    username = StringField('Username', [validators.Length(min=4, max=15)])
+    password = PasswordField('Password', [validators.Length(min=6, max=15)])
     rememberme = BooleanField('Remember me?')
 
 
@@ -24,21 +26,24 @@ db = {
     }
 
 
-class AnonimousUser:
-    pass
-
-
-def is_logged_in(request):
-    return request.cookies.get('username')
+def get_current_user(request):
+    encrypted_username = request.cookies.get('username')
+    if encrypted_username is not None:
+        try:
+            username = crypting.aes_decrypt(encrypted_username)
+        except Exception:
+            return None
+        if username in db.keys():
+            return username
+        else:
+            return None
+    else:
+        return None
 
 
 def auth(username, password, response):
     if username in db.keys():
-        if db[username] == password:
-            response.set_cookie('username', username)
-            return True
-        else:
-            return False
+        return db[username]['password'] == password
     return False
 
 
@@ -49,29 +54,40 @@ app.secret_key = 'super secret key'
 @app.route('/')
 @app.route('/login')
 def login():
-    if is_logged_in(request):
+    if get_current_user(request) is not None:
         return redirect(url_for('logout'))
     else:
         loginform = LoginForm(request.form)
-        return render_template('login.html', loginform=loginform, username=is_logged_in(request))
+        return render_template('login.html',
+                               loginform=loginform,
+                               user="AnonymousUser")
 
 
 @app.route('/login/processing', methods=["POST"])
 def login_processing():
-    assert not is_logged_in(request)
+    assert get_current_user(request) is None
     cookies_ = requests.get(domain_address).cookies
     print(f"Before request {cookies_}")
     loginform = LoginForm(request.form)
     if loginform.validate():
         username = loginform.username.data
+        print('Retrieving username')
         password = loginform.password.data
         r = make_response(redirect(url_for('logout')))
         if auth(username, password, r):
+            print(f'On login page, username is {username}, password is {password}')
+            encrypted_username = crypting.aes_encrypt(username)
+            # print(f'After encryption-decrypt, the username is {crypting.aes_decrypt(encrypted_username)}')
+            first_name = db[username]['first_name']
             if loginform.rememberme.data:
-                r.set_cookie('is_logged_in', '1',
+                r.set_cookie('username', encrypted_username,
                              expires=datetime.datetime.now() + datetime.timedelta(days=365))
+                r.set_cookie('first_name', first_name,
+                             expires=datetime.datetime.now() + datetime.timedelta(days=365))
+
             else:
-                r.set_cookie('is_logged_in', '1')
+                r.set_cookie('username', encrypted_username)
+                r.set_cookie('first_name', first_name)
             return r
         else:
             flash("Incorrect credentials")
@@ -83,19 +99,23 @@ def login_processing():
 
 @app.route('/logout')
 def logout():
-    if not is_logged_in(request):
+    current_user = get_current_user(request)
+    print(f'On logout page, the current user is {get_current_user(request)}')
+    if current_user is None:
         flash('You are not logged in')
         return redirect(url_for('login'))
     else:
-        return render_template('logout.html', username=is_logged_in(request))
+        first_name = db[current_user]['first_name']
+        return render_template('logout.html',
+                               user=first_name)
 
 
 @app.route('/logout/confirmed', methods=["POST"])
 def logout_process():
-    assert is_logged_in(request)
+    assert get_current_user(request) is not None
     r = make_response(redirect(url_for('login')))
-    r.delete_cookie('is_logged_in')
     r.delete_cookie('username')
+    r.delete_cookie('first_name')
     flash('Successfully logged out')
     return r
 
