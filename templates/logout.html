@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+
+{% block form %}
+    <fieldset>
+    <h2> Logout </h2>
+    <form action="./logout/confirmed" method="POST">
+        Are you sure that you want to log out?
+        <p style="text-align: center;"><input type="submit" name="submit" value="Yes"></p>
+    </form>
+
+    </fieldset>
+{% endblock %}
