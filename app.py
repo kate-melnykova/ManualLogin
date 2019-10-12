@@ -75,9 +75,7 @@ def login_processing():
         password = loginform.password.data
         r = make_response(redirect(url_for('logout')))
         if auth(username, password, r):
-            print(f'On login page, username is {username}, password is {password}')
             encrypted_username = crypting.aes_encrypt(username)
-            # print(f'After encryption-decrypt, the username is {crypting.aes_decrypt(encrypted_username)}')
             first_name = db[username]['first_name']
             if loginform.rememberme.data:
                 r.set_cookie('username', encrypted_username,
