@@ -27,17 +27,16 @@ db = {
 
 def get_current_user(request):
     encrypted_username = request.cookies.get('username')
-    if encrypted_username is not None:
-        try:
-            username = crypting.aes_decrypt(encrypted_username)
-        except Exception:
-            return None
-        if username in db.keys():
-            return username
-        else:
-            return None
-    else:
+
+    if encrypted_username is None:
         return None
+
+    try:
+        username = crypting.aes_decrypt(encrypted_username)
+    except Exception:
+        return None
+
+    return username in db and username or None
 
 
 def auth(username, password, response):
