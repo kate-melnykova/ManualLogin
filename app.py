@@ -3,7 +3,6 @@ import datetime
 from flask import Flask, render_template, request, url_for,\
     redirect, flash, make_response
 import requests
-from requests import Session, cookies
 from wtforms import Form
 from wtforms import StringField
 from wtforms import PasswordField, BooleanField
@@ -54,13 +53,14 @@ app.secret_key = 'super secret key'
 @app.route('/')
 @app.route('/login')
 def login():
-    if get_current_user(request) is not None:
-        return redirect(url_for('logout'))
-    else:
-        loginform = LoginForm(request.form)
-        return render_template('login.html',
-                               loginform=loginform,
-                               user="AnonymousUser")
+    if get_current_user(request) is None:
+        login_form = LoginForm(request.form)
+        return render_template(
+            'login.html',
+            loginform=login_form,
+            user='AnonymousUser'
+        )
+    return redirect(url_for('logout'))
 
 
 @app.route('/login/processing', methods=["POST"])
