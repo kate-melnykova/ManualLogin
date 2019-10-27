@@ -12,7 +12,7 @@ RUN echo $PYTHONPATH
 
 WORKDIR /app
 
-COPY calcs/ .
+COPY app/ .
 
 RUN pip install --upgrade pip
 RUN pip install -U -r requirements.txt

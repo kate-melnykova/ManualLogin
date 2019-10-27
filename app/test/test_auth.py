@@ -1,9 +1,8 @@
 from unittest.mock import patch, MagicMock
 
-from flask import Request
 import pytest
 
-from app import app, get_current_user
+from app.app import app, get_current_user
 
 
 @pytest.fixture
@@ -41,7 +40,7 @@ def test_get_current_user_cant_decrypt(client):
 
 
 def test_get_current_user_can_decrypt_but_no_such_user(client):
-    from app import db
+    from app.app import db
     request = MagicMock()
     with patch.dict(db, {'ivan': {}}, clear=True):
         with patch('app.crypting.aes_decrypt', return_value='user') as aes_decrypt_mock:
@@ -50,7 +49,7 @@ def test_get_current_user_can_decrypt_but_no_such_user(client):
 
 
 def test_get_current_user_success(client):
-    from app import db
+    from app.app import db
     request = MagicMock()
     with patch.dict(db, {'ivan': {}}, clear=True):
         with patch('app.crypting.aes_decrypt', return_value='ivan') as aes_decrypt_mock:

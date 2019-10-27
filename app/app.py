@@ -8,7 +8,7 @@ from wtforms import StringField
 from wtforms import PasswordField, BooleanField
 from wtforms import validators
 
-from auth import crypting
+from app.auth import crypting
 
 domain_address = 'http://127.0.0.1:5000'
 
