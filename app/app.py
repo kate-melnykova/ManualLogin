@@ -2,7 +2,7 @@ import datetime
 from functools import wraps
 
 from flask import Flask, render_template, request, url_for,\
-    redirect, flash, make_response, session
+    redirect, flash, make_response, session, Blueprint
 import requests
 from wtforms import Form
 from wtforms import StringField
@@ -14,6 +14,7 @@ from app.auth.user_classes import *
 
 domain_address = 'http://127.0.0.1:5000'
 
+# app = Blueprint('auth', __name__)
 app = Flask(__name__)
 app.secret_key = 'super secret key'
 
@@ -25,8 +26,8 @@ class LoginForm(Form):
 
 
 db = {
-    'user': {'password':'password', 'first_name':'A'},
-    'user2': {'password':'qwerty', 'first_name': 'B'}
+    'user': {'password':'password', 'first_name':'AA'},
+    'user2': {'password':'qwerty', 'first_name': 'BB'}
     }
 
 
@@ -39,8 +40,8 @@ def get_current_user():
     else:
         try:
             username = crypting.aes_decrypt(encrypted_username)
-        except Exception as ex:
-            print(f"An exception of type {type(ex).__name__} occurred. Arguments:{ex.args}")
+        except UnicodeDecodeError as ex:
+            print(f"An exception of type {type(ex).__name__} occurred.")
             request.user = AnonymousUser()
         else:
             if username in db:
@@ -65,7 +66,7 @@ def login_required(func):
     return wrapped
 
 
-def auth(username, password, response):
+def auth(username, password):
     if username in db.keys():
         return db[username]['password'] == password
     return False
@@ -86,40 +87,36 @@ def login():
 
 @app.route('/login/processing', methods=["POST"])
 def login_processing():
-    assert not request.user.is_authenticated()
-    cookies_ = requests.get(domain_address).cookies
-    print(f"Before request {cookies_}")
+    if request.user.is_authenticated():
+        flash('You are already logged in!')
+        return redirect(url_for('logout'))
+
     loginform = LoginForm(request.form)
     if loginform.validate():
         username = loginform.username.data
-        print('Retrieving username')
         password = loginform.password.data
         r = make_response(redirect(url_for('logout')))
-        if auth(username, password, r):
+        if auth(username, password):
             encrypted_username = crypting.aes_encrypt(username)
-            first_name = db[username]['first_name']
             if loginform.rememberme.data:
                 r.set_cookie('username', encrypted_username,
                              expires=datetime.datetime.now() + datetime.timedelta(days=365))
-                r.set_cookie('first_name', first_name,
+                r.set_cookie('first_name', db[username]['first_name'],
                              expires=datetime.datetime.now() + datetime.timedelta(days=365))
 
             else:
                 r.set_cookie('username', encrypted_username)
-                r.set_cookie('first_name', first_name)
+                r.set_cookie('first_name', db[username]['first_name'])
+            flash('You are successfully logged in')
             return r
-        else:
-            flash("Incorrect credentials")
-            return redirect(url_for('login'))
-    else:
-        flash("Incorrect credentials")
-        return redirect(url_for('login'))
+
+    flash("Incorrect credentials")
+    return redirect(url_for('login'))
 
 
 @app.route('/logout')
 @login_required
 def logout():
-    print(f'On logout page, the current user is {request.user.username}')
     return render_template('logout.html',
                            user=request.user.first_name)
 
@@ -141,4 +138,4 @@ def hello_world():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()
