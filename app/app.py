@@ -1,7 +1,8 @@
 import datetime
+from functools import wraps
 
 from flask import Flask, render_template, request, url_for,\
-    redirect, flash, make_response
+    redirect, flash, make_response, session
 import requests
 from wtforms import Form
 from wtforms import StringField
@@ -9,8 +10,12 @@ from wtforms import PasswordField, BooleanField
 from wtforms import validators
 
 from app.auth import crypting
+from app.auth.user_classes import *
 
 domain_address = 'http://127.0.0.1:5000'
+
+app = Flask(__name__)
+app.secret_key = 'super secret key'
 
 
 class LoginForm(Form):
@@ -25,18 +30,39 @@ db = {
     }
 
 
-def get_current_user(request):
+@app.before_request
+def get_current_user():
     encrypted_username = request.cookies.get('username')
 
     if encrypted_username is None:
-        return None
+        request.user = AnonymousUser()
+    else:
+        try:
+            username = crypting.aes_decrypt(encrypted_username)
+        except Exception as ex:
+            print(f"An exception of type {type(ex).__name__} occurred. Arguments:{ex.args}")
+            request.user = AnonymousUser()
+        else:
+            if username in db:
+                info = db[username]
+                request.user = User(username, info)
+            else:
+                request.user = AnonymousUser()
 
-    try:
-        username = crypting.aes_decrypt(encrypted_username)
-    except Exception:
-        return None
 
-    return username in db and username or None
+def login_required(func):
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        if not request.user.is_authenticated():
+            r = make_response(redirect(url_for('login')))
+            r.delete_cookie('username')
+            r.delete_cookie('first_name')
+            flash('You are not logged in')
+            return r
+        else:
+            return func(*args, **kwargs)
+
+    return wrapped
 
 
 def auth(username, password, response):
@@ -45,14 +71,10 @@ def auth(username, password, response):
     return False
 
 
-app = Flask(__name__)
-app.secret_key = 'super secret key'
-
-
 @app.route('/')
 @app.route('/login')
 def login():
-    if get_current_user(request) is None:
+    if not request.user.is_authenticated():
         login_form = LoginForm(request.form)
         return render_template(
             'login.html',
@@ -64,7 +86,7 @@ def login():
 
 @app.route('/login/processing', methods=["POST"])
 def login_processing():
-    assert get_current_user(request) is None
+    assert not request.user.is_authenticated()
     cookies_ = requests.get(domain_address).cookies
     print(f"Before request {cookies_}")
     loginform = LoginForm(request.form)
@@ -95,26 +117,27 @@ def login_processing():
 
 
 @app.route('/logout')
+@login_required
 def logout():
-    current_user = get_current_user(request)
-    print(f'On logout page, the current user is {get_current_user(request)}')
-    if current_user is None:
-        flash('You are not logged in')
-        return redirect(url_for('login'))
-    else:
-        first_name = db[current_user]['first_name']
-        return render_template('logout.html',
-                               user=first_name)
+    print(f'On logout page, the current user is {request.user.username}')
+    return render_template('logout.html',
+                           user=request.user.first_name)
 
 
 @app.route('/logout/confirmed', methods=["POST"])
+@login_required
 def logout_process():
-    assert get_current_user(request) is not None
     r = make_response(redirect(url_for('login')))
     r.delete_cookie('username')
     r.delete_cookie('first_name')
     flash('Successfully logged out')
     return r
+
+
+@app.route('/hello_world')
+@login_required
+def hello_world():
+    return 'Hello World!'
 
 
 if __name__ == '__main__':
