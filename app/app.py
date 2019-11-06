@@ -72,7 +72,6 @@ def auth(username, password):
     return False
 
 
-@app.route('/')
 @app.route('/login')
 def login():
     if not request.user.is_authenticated():
@@ -130,11 +129,11 @@ def logout_process():
     flash('Successfully logged out')
     return r
 
-
+@app.route('/')
 @app.route('/hello_world')
 @login_required
 def hello_world():
-    return 'Hello World!'
+    return render_template('hello_world.html')
 
 
 if __name__ == '__main__':
