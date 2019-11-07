@@ -3,7 +3,7 @@ This package is part of learning basics
 of cookies.
 
 # Installation
-To start the code, please install `docker`.
+To start the code, please install `docker` and `docker-compose`.
 Run the following lines in the terminal:
 
 `$ docker-compose up -d --build`
