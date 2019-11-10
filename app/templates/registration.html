@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block form %}
+    <fieldset>
+    <h1> Login </h1>
+    <form action="/login/processing" method="POST">
+        {{ loginform.csrf }}
+        <p> {{ loginform.username.label }}: {{ loginform.username(class="css_class") }}</p>
+        <p> {{ loginform.password.label }}: {{ loginform.password(class="css_class") }}</p>
+        <p> <input type="checkbox" name="rememberme" value="yes"> Remember me?</p>
+        <p style="text-align: center;"><input type="submit" name="submit" value="submit"></p>
+    </form>
+
+    </fieldset>
+{% endblock %}
