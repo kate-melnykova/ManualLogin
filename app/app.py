@@ -14,7 +14,7 @@ from app.auth.model import *
 
 # app = Blueprint('auth', __name__)
 app = Flask(__name__)
-app.secret_key = 'super secret key'
+app.secret_key = '7d8ed6dd-47e9-4fe6-bca5-ec62a721587e'
 
 
 class LoginForm(Form):
@@ -22,9 +22,15 @@ class LoginForm(Form):
     password = PasswordField('Password', [validators.Length(min=6, max=15)])
     rememberme = BooleanField('Remember me?')
 
+
 class Registration(Form):
     username = StringField('Username', [validators.Length(min=4, max=15)])
     password = PasswordField('Password', [validators.Length(min=6, max=15)])
+    first_name = StringField('First name', [validators.Length(min=1, max=15)])
+    dob = DateField('Date of birth')
+    email = email = EmailField("Email",
+                               validators=[InputRequired("Please enter your email address."),
+                                           validators.Email("Please enter your email address.")])
 
 
 
