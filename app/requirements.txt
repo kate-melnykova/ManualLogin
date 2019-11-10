@@ -4,6 +4,7 @@ pycryptodome==3.9.0
 requests==2.22.0
 datetime==4.3
 redis==3.3.11
+Jinja2==2.10.3
 
 # testing
 pytest==5.2.1

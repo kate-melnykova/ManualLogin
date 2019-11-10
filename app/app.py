@@ -1,4 +1,6 @@
 from functools import wraps
+import datetime
+from time import mktime
 
 from flask import Flask, render_template, request, url_for,\
     redirect, flash, make_response, session, Blueprint
@@ -35,13 +37,6 @@ class RegistrationForm(Form):
     email = EmailField('Email', [validators.Length(min=6, max=50), validators.Email()])
 
 
-
-db = {
-    'user': {'password':'password', 'first_name':'AA'},
-    'user2': {'password':'qwerty', 'first_name': 'BB'}
-    }
-
-
 @app.before_request
 def get_current_user():
     encrypted_username = request.cookies.get('username')
@@ -55,17 +50,7 @@ def get_current_user():
             print(f"An exception of type {type(ex).__name__} occurred.")
             request.user = AnonymousUser()
         else:
-            if username in db:
-                info = db[username]
-                request.user = User(username, info)
-            else:
-                request.user = AnonymousUser()
-            # try:
-            #   user = User.load(username)
-            # except:
-            #   request.user = AnonymousUser()
-            # else:
-            #   request.user = user
+            request.user = User.load(username)
 
 
 def login_required(func):
@@ -81,12 +66,6 @@ def login_required(func):
             return func(*args, **kwargs)
 
     return wrapped
-
-
-def auth(username, password):
-    if username in db.keys():
-        return db[username]['password'] == password
-    return False
 
 
 @app.route('/login')
@@ -105,24 +84,26 @@ def login():
 def login_processing():
     if request.user.is_authenticated():
         flash('You are already logged in!')
-        return redirect(url_for('logout'))
+        return redirect(url_for('hello_world'))
 
     loginform = LoginForm(request.form)
     if loginform.validate():
         username = loginform.username.data
         password = loginform.password.data
         r = make_response(redirect(url_for('logout')))
-        if auth(username, password):
+        user = User.load(username)
+        user.authenticate(password)
+        if user.is_authenticated():
             encrypted_username = crypting.aes_encrypt(username)
             if loginform.rememberme.data:
                 r.set_cookie('username', encrypted_username,
                              expires=datetime.datetime.now() + datetime.timedelta(days=365))
-                r.set_cookie('first_name', db[username]['first_name'],
+                r.set_cookie('first_name', user.first_name,
                              expires=datetime.datetime.now() + datetime.timedelta(days=365))
 
             else:
                 r.set_cookie('username', encrypted_username)
-                r.set_cookie('first_name', db[username]['first_name'])
+                r.set_cookie('first_name', user.first_name)
             flash('You are successfully logged in')
             return r
 
@@ -163,12 +144,11 @@ def registration_processing():
         return redirect(url_for('registration'))
 
     username = form.username.data
-    try:
-        user = User.load(username)
-    except:
+    user = User.load(username)
+    if isinstance(user, AnonymousUser):
         password = form.password.data
         first_name = form.first_name.data
-        dob = form.dob.data
+        dob = mktime(form.dob.data.timetuple())
         email = form.email.data
         user = User(username, password, first_name,
                     dob, email)
