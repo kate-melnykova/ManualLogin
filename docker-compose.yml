@@ -11,6 +11,13 @@ services:
     environment:
       - FLASK_APP=app.py
       - FLASK_ENV=development
+    depends_on:
+      - redis
+
+  redis:
+    image: bitnami/redis:latest
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
 
 volumes:
   pgdata:

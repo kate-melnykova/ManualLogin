@@ -2,12 +2,15 @@
 
 {% block form %}
     <fieldset>
-    <h1> Login </h1>
-    <form action="/login/processing" method="POST">
-        {{ loginform.csrf }}
-        <p> {{ loginform.username.label }}: {{ loginform.username(class="css_class") }}</p>
-        <p> {{ loginform.password.label }}: {{ loginform.password(class="css_class") }}</p>
-        <p> <input type="checkbox" name="rememberme" value="yes"> Remember me?</p>
+    <h1> Registration </h1>
+    <form action="/registration/processing" method="POST">
+        {{ regform.csrf }}
+        <p> {{ regform.username.label }}: {{ regform.username(class="css_class") }}</p>
+        <p> {{ regform.password.label }}: {{ regform.password(class="css_class") }}</p>
+        <p> {{ regform.confirm.label }}: {{ regform.confirm(class="css_class") }}</p>
+        <p> {{ regform.first_name.label }}: {{ regform.first_name(class="css_class") }}</p>
+        <p> {{ regform.dob.label }}: {{ regform.dob(class="css_class") }}</p>
+        <p> {{ regform.email.label }}: {{ regform.email(class="css_class") }}</p>
         <p style="text-align: center;"><input type="submit" name="submit" value="submit"></p>
     </form>
 

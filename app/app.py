@@ -5,7 +5,8 @@ from flask import Flask, render_template, request, url_for,\
 import requests
 from wtforms import Form
 from wtforms import StringField
-from wtforms import PasswordField, BooleanField
+from wtforms import PasswordField, BooleanField, DateField
+from wtforms.fields.html5 import EmailField
 from wtforms import validators
 
 from app.auth import crypting
@@ -23,14 +24,15 @@ class LoginForm(Form):
     rememberme = BooleanField('Remember me?')
 
 
-class Registration(Form):
+class RegistrationForm(Form):
     username = StringField('Username', [validators.Length(min=4, max=15)])
     password = PasswordField('Password', [validators.Length(min=6, max=15)])
+    confirm = PasswordField('Repeat Password',
+                            [validators.InputRequired(),
+                             validators.EqualTo('password', message='Passwords must match')])
     first_name = StringField('First name', [validators.Length(min=1, max=15)])
-    dob = DateField('Date of birth')
-    email = email = EmailField("Email",
-                               validators=[InputRequired("Please enter your email address."),
-                                           validators.Email("Please enter your email address.")])
+    dob = DateField('Date of birth in format Y-M-D', format='%Y-%m-%d')
+    email = EmailField('Email', [validators.Length(min=6, max=50), validators.Email()])
 
 
 
@@ -58,6 +60,12 @@ def get_current_user():
                 request.user = User(username, info)
             else:
                 request.user = AnonymousUser()
+            # try:
+            #   user = User.load(username)
+            # except:
+            #   request.user = AnonymousUser()
+            # else:
+            #   request.user = user
 
 
 def login_required(func):
@@ -137,6 +145,40 @@ def logout_process():
     r.delete_cookie('first_name')
     flash('Successfully logged out')
     return r
+
+
+@app.route('/registration')
+def registration():
+    regform = RegistrationForm()
+    return render_template('registration.html',
+                           regform=regform,
+                           user=request.user.first_name)
+
+
+@app.route('/registration/processing', methods=["POST"])
+def registration_processing():
+    form = RegistrationForm(request.form)
+    if not form.validate():
+        flash('Error')
+        return redirect(url_for('registration'))
+
+    username = form.username.data
+    try:
+        user = User.load(username)
+    except:
+        password = form.password.data
+        first_name = form.first_name.data
+        dob = form.dob.data
+        email = form.email.data
+        user = User(username, password, first_name,
+                    dob, email)
+        user.save()
+        flash('Registration is successful! Please login.')
+        return redirect(url_for('login'))
+    else:
+        flash('This username is not available')
+        return redirect(url_for('registration'))
+
 
 @app.route('/')
 @app.route('/hello_world')

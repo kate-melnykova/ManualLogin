@@ -2,8 +2,8 @@ Flask==1.1.1
 WTForms==2.2.1
 pycryptodome==3.9.0
 requests==2.22.0
-datetime
-redis
+datetime==4.3
+redis==3.3.11
 
 # testing
 pytest==5.2.1
