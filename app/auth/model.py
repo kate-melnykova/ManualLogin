@@ -1,4 +1,6 @@
 import datetime
+import json
+
 import redis
 
 r = redis.Redis()
@@ -23,6 +25,12 @@ class BaseUser:
 class User(BaseUser):
     def is_authenticated(self):
         return True
+
+    @classmethod
+    def load(cls, username):
+        user_data = json.loads(r.get(username))
+        print(f'User data is {user_data}')
+        return cls(username, user_data)
 
 
 class AnonymousUser(BaseUser):
