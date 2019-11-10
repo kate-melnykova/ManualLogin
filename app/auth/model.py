@@ -1,8 +1,20 @@
+import datetime
+import redis
+
+r = redis.Redis()
+
 class BaseUser:
-    def __init__(self, username, info=dict()):
+    def __init__(self, username, password, first_name=None,
+                 dob=None, email=None, registration_date=None):
         self.username = username
-        for k, v in info.items():
-            setattr(self, k, v)
+        self.password = password
+        self.first_name = first_name
+        self.dob = dob
+        self.email = email
+        if registration_date is None:
+            self.registration_date = datetime.now()
+        else:
+            self.registration_date = registration_date
 
     def is_authenticated(self):
         raise NotImplemented

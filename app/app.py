@@ -1,4 +1,3 @@
-import datetime
 from functools import wraps
 
 from flask import Flask, render_template, request, url_for,\
@@ -10,9 +9,8 @@ from wtforms import PasswordField, BooleanField
 from wtforms import validators
 
 from app.auth import crypting
-from app.auth.user_classes import *
+from app.auth.model import *
 
-domain_address = 'http://127.0.0.1:5000'
 
 # app = Blueprint('auth', __name__)
 app = Flask(__name__)
@@ -23,6 +21,11 @@ class LoginForm(Form):
     username = StringField('Username', [validators.Length(min=4, max=15)])
     password = PasswordField('Password', [validators.Length(min=6, max=15)])
     rememberme = BooleanField('Remember me?')
+
+class Registration(Form):
+    username = StringField('Username', [validators.Length(min=4, max=15)])
+    password = PasswordField('Password', [validators.Length(min=6, max=15)])
+
 
 
 db = {
