@@ -3,16 +3,11 @@ import datetime
 from time import mktime
 
 from flask import Flask, render_template, request, url_for,\
-    redirect, flash, make_response, session, Blueprint
-import requests
-from wtforms import Form
-from wtforms import StringField
-from wtforms import PasswordField, BooleanField, DateField
-from wtforms.fields.html5 import EmailField
-from wtforms import validators
+    redirect, flash, make_response, Blueprint
 
 from app.auth import crypting
-from app.auth.model import *
+from app.auth.models import *
+from app.views.wtforms import LoginForm, RegistrationForm
 
 
 # app = Blueprint('auth', __name__)
@@ -20,27 +15,9 @@ app = Flask(__name__)
 app.secret_key = '7d8ed6dd-47e9-4fe6-bca5-ec62a721587e'
 
 
-class LoginForm(Form):
-    username = StringField('Username', [validators.Length(min=4, max=15)])
-    password = PasswordField('Password', [validators.Length(min=6, max=15)])
-    rememberme = BooleanField('Remember me?')
-
-
-class RegistrationForm(Form):
-    username = StringField('Username', [validators.Length(min=4, max=15)])
-    password = PasswordField('Password', [validators.Length(min=6, max=15)])
-    confirm = PasswordField('Repeat Password',
-                            [validators.InputRequired(),
-                             validators.EqualTo('password', message='Passwords must match')])
-    first_name = StringField('First name', [validators.Length(min=1, max=15)])
-    dob = DateField('Date of birth in format Y-M-D', format='%Y-%m-%d')
-    email = EmailField('Email', [validators.Length(min=6, max=50), validators.Email()])
-
-
 @app.before_request
 def get_current_user():
     encrypted_username = request.cookies.get('username')
-
     if encrypted_username is None:
         request.user = AnonymousUser()
     else:
@@ -56,7 +33,7 @@ def get_current_user():
 def login_required(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
-        if not request.user.is_authenticated():
+        if isinstance(request.user, AnonymousUser):
             r = make_response(redirect(url_for('login')))
             r.delete_cookie('username')
             r.delete_cookie('first_name')

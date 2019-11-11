@@ -1,10 +1,7 @@
 from time import time
 import json
 
-import redis
-
-
-r = redis.Redis.from_url(url=f'redis://redis:6379/0')
+from models.db import redis as r
 
 
 class BaseUser:
@@ -42,7 +39,7 @@ class User(BaseUser):
     attributes = ['username', 'password', 'first_name',
                   'dob', 'email', 'registration_date']
 
-    def save(self):
+    def save(self) -> None:
         data = dict()
         for attribute in self.attributes:
             data[attribute] = self.__getattribute__(attribute)
