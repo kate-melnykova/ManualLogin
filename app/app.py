@@ -10,9 +10,23 @@ from app.auth.models import *
 from app.views.wtforms import LoginForm, RegistrationForm
 
 
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+
+def forbidden(e):
+    return render_template('403.html'), 403
+
+def unautharized(e):
+    return render_template('401.html'), 401
+
+
 # app = Blueprint('auth', __name__)
 app = Flask(__name__)
 app.secret_key = '7d8ed6dd-47e9-4fe6-bca5-ec62a721587e'
+app.register_error_handler(404, page_not_found)
+app.register_error_handler(403, forbidden)
+app.register_error_handler(401, unautharized)
 
 
 @app.before_request
@@ -142,11 +156,16 @@ def registration_processing():
         return redirect(url_for('registration'))
 
 
-@app.route('/')
 @app.route('/hello_world')
 @login_required
 def hello_world():
     return render_template('hello_world.html')
+
+
+@app.route('/')
+@app.route('/welcome')
+def welcome():
+    return render_template('welcome.html')
 
 
 if __name__ == '__main__':

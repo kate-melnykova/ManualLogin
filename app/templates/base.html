@@ -10,11 +10,12 @@
         <a href="./login">Login</a>
         <a href="./logout">Logout</a>
         <a href="./registration">Registration</a>
-        <a href="./hello_world">Hello world</a>
+        <a href="./welcome">Welcome (accessible for all users)</a>
+        <a href="./hello_world">Hello world (accessible for registered users only)</a>
     </div>
 <div>
     <h1>Manual login-logout: learning cookies</h1>
-    <p> Hello, {{ user }}</p>
+    <p> Hello, {% if user %} {{user.first_name}}! {%else%} AnonymousUser! {%endif%}</p>
     {% with messages = get_flashed_messages() %}
     {% if messages %}
         <div style="background-color: beige;">
