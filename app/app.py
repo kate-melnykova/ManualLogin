@@ -17,6 +17,7 @@ def page_not_found(e):
 def forbidden(e):
     return render_template('403.html'), 403
 
+
 def unautharized(e):
     return render_template('401.html'), 401
 
@@ -125,10 +126,14 @@ def logout_process():
 
 @app.route('/registration')
 def registration():
+    if request.user.is_authenticated:
+        flash('You are already logged in!')
+        return redirect(url_for('hello_world'))
+
     regform = RegistrationForm()
     return render_template('registration.html',
                            regform=regform,
-                           user=request.user.first_name)
+                           user=request.user)
 
 
 @app.route('/registration/processing', methods=["POST"])

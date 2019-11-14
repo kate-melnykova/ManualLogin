@@ -1,38 +1,45 @@
 from time import time
 import json
 from passlib.hash import sha256_crypt
+from copy import copy
+from typing import Dict
 
 from models.db import redis as r
+from models.basemodel import BaseModel, ValidationError
 
 
-class BaseUser:
+class BaseUser(BaseModel):
+    attributes = ['username', 'password', 'first_name',
+                 'dob', 'email', 'registration_date', 'id']
+
     @staticmethod
-    def _generate_id(username):
-        return f'user:{username}'
+    def _generate_id(**kwargs):
+        return f'user:{kwargs["username"]}'
 
-    def __init__(self, username, password='', first_name=None,
-                 dob=None, email=None, registration_date=None, id=None):
-        self.username = username
-        self.id = id or self._generate_id(username)
-        if len(password) > 15:
-            self.password = password # password has been hashed earlier
-        else:
-            self.password = sha256_crypt.encrypt(password)
-        print(f'id is {self.id}: user.password is {password} and hashed {self.password}')
-        self.first_name = first_name
-        self.dob = dob
-        self.email = email
-        self.registration_date = registration_date or int(time())
+    @staticmethod
+    def hash_password(password):
+        return sha256_crypt.encrypt(password)
+
+    @staticmethod
+    def validate(data: Dict):
+        if 'username' not in data:
+            raise ValidationError
 
     @classmethod
-    def load(cls, username: str) -> 'User' or 'AnonymousUser':
-        """
-        Loads user from redis db 0
-        :param username: username, also a key in redis db
-        :return: instance of User if username is in db, None otherwise
-        """
-        data = r.get(cls._generate_id(username))
-        return data and User(**json.loads(data)) or AnonymousUser()
+    def defaults(cls, **kwargs):
+        return {
+            'id': cls._generate_id(kwargs['username']),
+            'password': '',
+            'first_name': '',
+            'dob': '',
+            'email': '',
+            'registration_date': int(time()),
+        }
+
+    @classmethod
+    def clean(cls, data):
+        data['password'] = cls.hash_password(data['password'])
+        return data
 
     def verify_password(self, password: str) -> bool:
         return False
@@ -54,10 +61,19 @@ class User(BaseUser):
     def verify_password(self, password: str) -> bool:
         return sha256_crypt.verify(password, self.password)
 
+    @classmethod
+    def load(cls, username: str) -> 'User' or None:
+        """
+        Loads user from redis db 0
+        :param username: username, also a key in redis db
+        :return: instance of User if username is in db, None otherwise
+        """
+        return super().load(cls._generate_id(username))
+
 
 class AnonymousUser(BaseUser):
     is_authenticated = False
 
     def __init__(self):
-        super().__init__('AnonymousUser')
+        super().__init__(username='AnonymousUser')
 
