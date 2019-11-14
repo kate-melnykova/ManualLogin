@@ -1,22 +1,28 @@
 from time import time
 import json
+from passlib.hash import sha256_crypt
 
 from models.db import redis as r
 
 
 class BaseUser:
+    @staticmethod
+    def _generate_id(username):
+        return f'user:{username}'
+
     def __init__(self, username, password='', first_name=None,
-                 dob=None, email=None, registration_date=None):
+                 dob=None, email=None, registration_date=None, id=None):
         self.username = username
-        self.password = password
+        self.id = id or self._generate_id(username)
+        if len(password) > 15:
+            self.password = password # password has been hashed earlier
+        else:
+            self.password = sha256_crypt.encrypt(password)
+        print(f'id is {self.id}: user.password is {password} and hashed {self.password}')
         self.first_name = first_name
         self.dob = dob
         self.email = email
-        if registration_date is None:
-            self.registration_date = int(time())
-        else:
-            self.registration_date = registration_date
-        self._is_authenticated = False
+        self.registration_date = registration_date or int(time())
 
     @classmethod
     def load(cls, username: str) -> 'User' or 'AnonymousUser':
@@ -25,41 +31,33 @@ class BaseUser:
         :param username: username, also a key in redis db
         :return: instance of User if username is in db, None otherwise
         """
-        user_data = r.get(username)
-        return user_data and User(**json.loads(user_data)) or AnonymousUser()
+        data = r.get(cls._generate_id(username))
+        return data and User(**json.loads(data)) or AnonymousUser()
 
-    def _check_password(self, password):
-        return self.password == password
-
-    def is_authenticated(self):
-        raise NotImplemented
+    def verify_password(self, password: str) -> bool:
+        return False
 
 
 class User(BaseUser):
-    attributes = ['username', 'password', 'first_name',
-                  'dob', 'email', 'registration_date']
+    _attributes = ['username', 'password', 'first_name',
+                  'dob', 'email', 'registration_date', 'id']
+
+    is_authenticated = True
 
     def save(self) -> None:
         data = dict()
-        for attribute in self.attributes:
+        for attribute in self._attributes:
             data[attribute] = self.__getattribute__(attribute)
-        print(f'User data is {data}')
-        r.set(self.username, json.dumps(data))
+        print(f'data before saving is {data}')
+        r.set(self.id, json.dumps(data))
 
-    def authenticate(self, password: str) -> bool:
-        self._is_authenticated = self._check_password(password)
-
-    def is_authenticated(self):
-        return self._is_authenticated
+    def verify_password(self, password: str) -> bool:
+        return sha256_crypt.verify(password, self.password)
 
 
 class AnonymousUser(BaseUser):
+    is_authenticated = False
+
     def __init__(self):
         super().__init__('AnonymousUser')
-
-    def authenticate(self):
-        pass
-
-    def is_authenticated(self):
-        return False
 

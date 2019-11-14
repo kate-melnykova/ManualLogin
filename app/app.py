@@ -27,7 +27,8 @@ def get_current_user():
             print(f"An exception of type {type(ex).__name__} occurred.")
             request.user = AnonymousUser()
         else:
-            request.user = User.load(username)
+            print('Loading user based on cookies')
+            request.user = User.load(username) or AnonymousUser()
 
 
 def login_required(func):
@@ -47,7 +48,7 @@ def login_required(func):
 
 @app.route('/login')
 def login():
-    if not request.user.is_authenticated():
+    if not request.user.is_authenticated:
         login_form = LoginForm(request.form)
         return render_template(
             'login.html',
@@ -59,7 +60,7 @@ def login():
 
 @app.route('/login/processing', methods=["POST"])
 def login_processing():
-    if request.user.is_authenticated():
+    if request.user.is_authenticated:
         flash('You are already logged in!')
         return redirect(url_for('hello_world'))
 
@@ -67,10 +68,13 @@ def login_processing():
     if loginform.validate():
         username = loginform.username.data
         password = loginform.password.data
-        r = make_response(redirect(url_for('logout')))
+        r = make_response(redirect(url_for('hello_world')))
         user = User.load(username)
-        user.authenticate(password)
-        if user.is_authenticated():
+        if user is not None:
+            print(f'Login: user password is {user.password}')
+        print(f'Login: password entered is {password}')
+        print(f'Login: loaded user is an object of class {type(user)}')
+        if user and user.verify_password(password):
             encrypted_username = crypting.aes_encrypt(username)
             if loginform.rememberme.data:
                 r.set_cookie('username', encrypted_username,
@@ -117,12 +121,13 @@ def registration():
 def registration_processing():
     form = RegistrationForm(request.form)
     if not form.validate():
-        flash('Error')
+        flash('Error: incorrect entry in the form')
         return redirect(url_for('registration'))
 
     username = form.username.data
+    print('Registration user loading')
     user = User.load(username)
-    if isinstance(user, AnonymousUser):
+    if not user or not user.is_authenticated:
         password = form.password.data
         first_name = form.first_name.data
         dob = mktime(form.dob.data.timetuple())
