@@ -5,8 +5,9 @@ from time import mktime
 from flask import Flask, render_template, request, url_for,\
     redirect, flash, make_response, Blueprint
 
+from app.models.basemodel import NotFound
 from app.auth import crypting
-from app.auth.models import *
+from app.auth.models import User, AnonymousUser
 from app.views.wtforms import LoginForm, RegistrationForm
 
 
@@ -18,16 +19,15 @@ def forbidden(e):
     return render_template('403.html'), 403
 
 
-def unautharized(e):
+def unauthorized(e):
     return render_template('401.html'), 401
 
 
-# app = Blueprint('auth', __name__)
 app = Flask(__name__)
 app.secret_key = '7d8ed6dd-47e9-4fe6-bca5-ec62a721587e'
 app.register_error_handler(404, page_not_found)
 app.register_error_handler(403, forbidden)
-app.register_error_handler(401, unautharized)
+app.register_error_handler(401, unauthorized)
 
 
 @app.before_request
@@ -43,8 +43,10 @@ def get_current_user():
             request.user = AnonymousUser()
         else:
             print('Loading user based on cookies')
-            request.user = User.load(username) or AnonymousUser()
-
+            try:
+                request.user = User.load(username)
+            except NotFound:
+                request.user = AnonymousUser()
 
 def login_required(func):
     @wraps(func)
@@ -84,12 +86,16 @@ def login_processing():
         username = loginform.username.data
         password = loginform.password.data
         r = make_response(redirect(url_for('hello_world')))
-        user = User.load(username)
-        if user is not None:
-            print(f'Login: user password is {user.password}')
+        try:
+            user = User.load(username)
+        except:
+            flash("Incorrect credentials: please double-check username")
+            return redirect(url_for('login'))
+
+        print(f'Login: user password is {user.password}')
         print(f'Login: password entered is {password}')
         print(f'Login: loaded user is an object of class {type(user)}')
-        if user and user.verify_password(password):
+        if user.verify_password(password):
             encrypted_username = crypting.aes_encrypt(username)
             if loginform.rememberme.data:
                 r.set_cookie('username', encrypted_username,
@@ -100,11 +106,11 @@ def login_processing():
             else:
                 r.set_cookie('username', encrypted_username)
                 r.set_cookie('first_name', user.first_name)
-            flash('You are successfully logged in')
+            flash('You are successfully logged in!')
             return r
-
-    flash("Incorrect credentials")
-    return redirect(url_for('login'))
+        else:
+            flash("Incorrect credentials: please double-check username and password")
+            return redirect(url_for('login'))
 
 
 @app.route('/logout')
@@ -145,20 +151,23 @@ def registration_processing():
 
     username = form.username.data
     print('Registration user loading')
-    user = User.load(username)
-    if not user or not user.is_authenticated:
-        password = form.password.data
-        first_name = form.first_name.data
-        dob = mktime(form.dob.data.timetuple())
-        email = form.email.data
-        user = User(username, password, first_name,
-                    dob, email)
-        user.save()
-        flash('Registration is successful! Please login.')
-        return redirect(url_for('login'))
+    try:
+        user = User.load(username)
+    except:
+        pass
     else:
         flash('This username is not available')
         return redirect(url_for('registration'))
+
+    password = form.password.data
+    first_name = form.first_name.data
+    dob = mktime(form.dob.data.timetuple())
+    email = form.email.data
+    User.create(username=username, password=password,
+               first_name=first_name, dob=dob,
+               email=email)
+    flash('Registration is successful! Please login.')
+    return redirect(url_for('login'))
 
 
 @app.route('/hello_world')

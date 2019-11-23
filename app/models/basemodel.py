@@ -12,10 +12,8 @@ class ValidationError(ValueError):
 
 
 class BaseModel:
-    attributes = []
-
     @classmethod
-    def _attributes(cls):
+    def get_attributes(cls):
         return list(set(cls.attributes + ['id']))
 
     @staticmethod
@@ -29,7 +27,7 @@ class BaseModel:
 
     def save(self):
         d = dict()
-        for attribute in self._attributes():
+        for attribute in self.get_attributes():
             d[attribute] = self.__getattribute__(attribute)
         r.set(self.id, json.dumps(d))
 
@@ -45,15 +43,24 @@ class BaseModel:
         return kwargs
 
     @classmethod
+    def validate(cls, data):
+        pass
+
+    @classmethod
     def clean(cls, data):
         return data
 
     @classmethod
     def create(cls, **kwargs):
+        """
+        creates new instance or raises ValidationError
+        :param kwargs:
+        :return:
+        """
         cls.validate(kwargs)
         attrs = cls.defaults(**kwargs)
         attrs.update(kwargs)
-        cls.clean(kwargs)
+        cls.clean(attrs)
         instance = cls(**attrs)
         instance.save()
         return instance

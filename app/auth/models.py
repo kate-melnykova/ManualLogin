@@ -37,13 +37,13 @@ class BaseUser(BaseModel):
             raise ValidationError
 
     @classmethod
-    def defaults(cls, **kwargs) -> Dict[str]:
+    def defaults(cls, **kwargs):
         """
         specify default values of all user attributes.
         :param kwargs: all user data. Please make sure that this data contains username
         """
         return {
-            'id': cls._generate_id(kwargs['username']),
+            'id': cls._generate_id(username=kwargs.get('username')),
             'password': '',
             'first_name': '',
             'dob': '',
@@ -74,14 +74,11 @@ class BaseUser(BaseModel):
 
 
 class User(BaseUser):
-    _attributes = ['username', 'password', 'first_name',
-                  'dob', 'email', 'registration_date', 'id']
-
     is_authenticated = True
 
     def save(self) -> None:
         data = dict()
-        for attribute in self._attributes:
+        for attribute in self.get_attributes():
             data[attribute] = self.__getattribute__(attribute)
         print(f'data before saving is {data}')
         r.set(self.id, json.dumps(data))
@@ -96,7 +93,7 @@ class User(BaseUser):
         :param username: username, also a key in redis db
         :return: instance of User if username is in db, otherwise raises NotFound
         """
-        return super().load(cls._generate_id(username))
+        return super().load(cls._generate_id(username=username))
 
 
 class AnonymousUser(BaseUser):
