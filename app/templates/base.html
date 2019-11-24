@@ -7,15 +7,21 @@
 </head>
 <body>
 <div class="topnav">
-        <a href="./login">Login</a>
-        <a href="./logout">Logout</a>
-        <a href="./registration">Registration</a>
-        <a href="./welcome">Welcome (accessible for all users)</a>
-        <a href="./hello_world">Hello world (accessible for registered users only)</a>
+        <a href="/welcome">Welcome (accessible for all users)</a>
+        <a href="/blogpost_new"> News feed </a>
+        <a href="/hello_world">Hello world (accessible for registered users only)</a>
+        {% if user.is_authenticated %}
+            <a href="/profile"> {{user.first_name}} account </a>
+            <a href="/blogpost_edit"> Create new post</a>
+            <a href="/blogpost_myposts"> My posts </a>
+            <a href="/logout">Logout</a>
+        {%else%}
+            <a href="/login">Login</a>
+            <a href="/registration">Registration</a>
+        {% endif %}
     </div>
 <div>
     <h1>Manual login-logout: learning cookies</h1>
-    <p> Hello, {% if user %} {{user.first_name}}! {%else%} AnonymousUser! {%endif%}</p>
     {% with messages = get_flashed_messages() %}
     {% if messages %}
         <div style="background-color: beige;">

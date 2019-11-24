@@ -55,6 +55,10 @@ class BaseUser(BaseModel):
     def get_attributes(cls):
         return list(cls.defaults().keys()) + ['username', 'id']
 
+    @staticmethod
+    def info_to_db_key(**kwargs) -> str:
+        return f'user:{kwargs["username"]}' if 'username' in kwargs else 'user:*'
+
     @classmethod
     def clean(cls, data: Dict) -> Dict:
         """

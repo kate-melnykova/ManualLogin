@@ -8,7 +8,8 @@ from flask import Flask, render_template, request, url_for,\
 from app.models.basemodel import NotFound
 from app.auth import crypting
 from app.auth.models import User, AnonymousUser
-from app.views.wtforms import LoginForm, RegistrationForm
+from app.content.models import BlogPost, RecentPosts
+from app.views.wtforms import LoginForm, RegistrationForm, BlogForm
 
 
 def page_not_found(e):
@@ -22,6 +23,8 @@ def forbidden(e):
 def unauthorized(e):
     return render_template('401.html'), 401
 
+
+recent_posts = RecentPosts()
 
 app = Flask(__name__)
 app.secret_key = '7d8ed6dd-47e9-4fe6-bca5-ec62a721587e'
@@ -48,6 +51,7 @@ def get_current_user():
             except NotFound:
                 request.user = AnonymousUser()
 
+
 def login_required(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
@@ -63,14 +67,18 @@ def login_required(func):
     return wrapped
 
 
+@app.context_processor
+def inject_user():
+    return dict(user=request.user)
+
+
 @app.route('/login')
 def login():
     if not request.user.is_authenticated:
         login_form = LoginForm(request.form)
         return render_template(
             'login.html',
-            loginform=login_form,
-            user='AnonymousUser'
+            loginform=login_form
         )
     return redirect(url_for('logout'))
 
@@ -116,8 +124,7 @@ def login_processing():
 @app.route('/logout')
 @login_required
 def logout():
-    return render_template('logout.html',
-                           user=request.user.first_name)
+    return render_template('logout.html')
 
 
 @app.route('/logout/confirmed', methods=["POST"])
@@ -138,8 +145,7 @@ def registration():
 
     regform = RegistrationForm()
     return render_template('registration.html',
-                           regform=regform,
-                           user=request.user)
+                           regform=regform)
 
 
 @app.route('/registration/processing', methods=["POST"])
@@ -180,6 +186,49 @@ def hello_world():
 @app.route('/welcome')
 def welcome():
     return render_template('welcome.html')
+
+
+@login_required
+@app.route('/blogpost_edit')
+def blogpost_edit():
+    print('I am here')
+    return render_template('blogpost_editor.html', blogform=BlogForm())
+
+
+@app.route('/blogpost/create', methods=['POST'])
+def blogpost_create():
+    form = BlogForm(request.form)
+    if not form.validate():
+        flash('Error: incorrect entry in the form')
+        return redirect(url_for('blogpost_edit'))
+
+    author = request.user.username
+    author_id = request.user.id
+    # id = form.id
+    title = form.title.data
+    content = form.content.data
+
+    blogpost = BlogPost.create(author=author, author_id=author_id,
+                               title=title, content=content)
+    recent_posts.add(blogpost.id)
+    flash('Blogpost is successfully created')
+    return redirect(url_for('welcome'))
+
+
+@app.route('/blogpost_new')
+def blogpost_new():
+    posts = [BlogPost.load(post_id) for post_id in recent_posts.post_ids]
+    return render_template('blogpost_new.html', posts=posts)
+
+
+@login_required
+@app.route('/blogpost_myposts')
+def blogpost_myposts():
+    return render_template('blogpost_myposts.html')
+
+@app.route('/profile')
+def profile():
+    return render_template('profile.html')
 
 
 if __name__ == '__main__':

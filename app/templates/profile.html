@@ -1,10 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
+{% extends 'base.html' %}
 
-</body>
-</html>
+{% block form %}
+<h2> News feed </h2>
+{% for post in posts %}
+    <fieldset>
+        <p style="font-size:160%;"><b>{{post.title}}</b></p>
+        <p style="font-size:80%;">
+            <i><a href="/profile?username={{post.author}}">{{post.author}}</a></i>
+        </p>
+        <p> {{post.content}} </p>
+    </fieldset>
+    <br>
+{% endfor %}
+{% endblock %}

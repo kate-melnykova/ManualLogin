@@ -1,6 +1,8 @@
 import json
+from typing import List
 
 from models.db import redis as r
+from models.db import search
 
 
 class NotFound(Exception):
@@ -32,7 +34,7 @@ class BaseModel:
         r.set(self.id, json.dumps(d))
 
     @classmethod
-    def load(cls, id):
+    def load(cls, id: str or int):
         data = r.get(id)
         if data is None:
             raise NotFound
@@ -61,6 +63,16 @@ class BaseModel:
         attrs = cls.defaults(**kwargs)
         attrs.update(kwargs)
         cls.clean(attrs)
+        print(attrs)
         instance = cls(**attrs)
         instance.save()
         return instance
+
+    @staticmethod
+    def info_to_db_key(**kwargs) -> str:
+        raise NotImplemented
+
+    @classmethod
+    def search(cls, **kwargs) -> List:
+        db_key = cls.info_to_db_key(**kwargs)
+        return [cls.load(key) for key in search(db_key)]

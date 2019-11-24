@@ -1,8 +1,11 @@
 from wtforms import Form
 from wtforms import StringField
-from wtforms import PasswordField, BooleanField, DateField
+from wtforms import PasswordField, BooleanField, DateField, TextAreaField
 from wtforms.fields.html5 import EmailField
 from wtforms import validators
+
+
+strip_filter = lambda x: x.strip() if x else None
 
 
 class LoginForm(Form):
@@ -20,3 +23,10 @@ class RegistrationForm(Form):
     first_name = StringField('First name', [validators.Length(min=1, max=15)])
     dob = DateField('Date of birth in format Y-M-D', format='%Y-%m-%d')
     email = EmailField('Email', [validators.Length(min=6, max=50), validators.Email()])
+
+
+class BlogForm(Form):
+    title = StringField('Title', [validators.Length(min=1, max=255)],
+                        filters=[strip_filter])
+    content = TextAreaField('Content', filters=[strip_filter])
+    id = None
