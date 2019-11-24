@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+
+{% block form %}
+<div>
+    <h2>My info: </h2>
+    <p> Username: {{user.username}}</p>
+    <p> First name: {{user.first_name}}</p>
+    <p> Date of birth: {{user.dob}} (will be changed to normal date soon)</p>
+    <p> Registered since: {{user.registration_date}} (will be changed to normal view soon)</p>
+    <p> Total number of posts: {{products|length}}</p>
+</div>
+
+<h2> My posts </h2>
+{% for post in posts %}
+    <fieldset>
+        <p style="font-size:160%;"><b>{{post.title}}</b></p>
+        <p style="font-size:80%;">
+            <i><a href="/profile?username={{post.author}}">{{post.author}}</a></i>
+        </p>
+        <p> {{post.content}} </p>
+    </fieldset>
+    <br>
+{% endfor %}
+{% endblock %}

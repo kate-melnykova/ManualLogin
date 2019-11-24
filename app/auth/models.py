@@ -6,9 +6,17 @@ from typing import Dict
 
 from models.db import redis as r
 from models.basemodel import BaseModel, ValidationError
+from models.basemodel import IdField, TextField, UserField, DateField, EmailField, PasswordField
 
 
 class BaseUser(BaseModel):
+    id = IdField()
+    username = UserField(default='')
+    first_name = TextField(default='')
+    dob = DateField(default='')
+    email = EmailField(default='')
+    password = PasswordField(default='')
+    registration_date = DateField(default=int(time()))
 
     @staticmethod
     def _generate_id(**kwargs) -> str:
@@ -44,16 +52,17 @@ class BaseUser(BaseModel):
         """
         return {
             'id': cls._generate_id(username=kwargs.get('username')),
-            'password': '',
-            'first_name': '',
-            'dob': '',
-            'email': '',
-            'registration_date': int(time()),
+            'username': cls.username.default,
+            'password': cls.password.default,
+            'first_name': cls.first_name.default,
+            'dob': cls.dob.default,
+            'email': cls.email.default,
+            'registration_date': cls.registration_date.default
         }
 
     @classmethod
     def get_attributes(cls):
-        return list(cls.defaults().keys()) + ['username', 'id']
+        return list(cls.defaults().keys())
 
     @staticmethod
     def info_to_db_key(**kwargs) -> str:
@@ -78,6 +87,7 @@ class BaseUser(BaseModel):
 
 
 class User(BaseUser):
+
     is_authenticated = True
 
     def save(self) -> None:

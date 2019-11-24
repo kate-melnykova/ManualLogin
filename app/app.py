@@ -96,7 +96,7 @@ def login_processing():
         r = make_response(redirect(url_for('hello_world')))
         try:
             user = User.load(username)
-        except:
+        except NotFound:
             flash("Incorrect credentials: please double-check username")
             return redirect(url_for('login'))
 
@@ -159,7 +159,7 @@ def registration_processing():
     print('Registration user loading')
     try:
         user = User.load(username)
-    except:
+    except NotFound:
         pass
     else:
         flash('This username is not available')
@@ -167,11 +167,11 @@ def registration_processing():
 
     password = form.password.data
     first_name = form.first_name.data
-    dob = mktime(form.dob.data.timetuple())
+    dob = form.dob.data.timetuple()
     email = form.email.data
     User.create(username=username, password=password,
-               first_name=first_name, dob=dob,
-               email=email)
+                first_name=first_name, dob=dob,
+                email=email)
     flash('Registration is successful! Please login.')
     return redirect(url_for('login'))
 
@@ -195,6 +195,7 @@ def blogpost_edit():
     return render_template('blogpost_editor.html', blogform=BlogForm())
 
 
+@login_required
 @app.route('/blogpost/create', methods=['POST'])
 def blogpost_create():
     form = BlogForm(request.form)
@@ -215,20 +216,33 @@ def blogpost_create():
     return redirect(url_for('welcome'))
 
 
-@app.route('/blogpost_new')
-def blogpost_new():
+@app.route('/blogpost_recent')
+def blogpost_recent():
     posts = [BlogPost.load(post_id) for post_id in recent_posts.post_ids]
-    return render_template('blogpost_new.html', posts=posts)
+    return render_template('blogpost_recent.html', posts=posts)
 
 
 @login_required
-@app.route('/blogpost_myposts')
-def blogpost_myposts():
-    return render_template('blogpost_myposts.html')
+@app.route('/account')
+def account():
+    user = request.user
+    posts = BlogPost.search(author=user.username)
+    return render_template('account.html', user=user, posts=posts)
+
 
 @app.route('/profile')
 def profile():
-    return render_template('profile.html')
+    view_user = request.args.get('username')
+    try:
+        view_user = User.load(view_user)
+    except:
+        flash(f'Username {view_user} does not exist')
+        return redirect(url_for('blogpost_recent'))
+    else:
+        view_user = view_user.username
+        posts = BlogPost.search(author=view_user)
+
+    return render_template('profile.html', username=view_user, posts=posts)
 
 
 if __name__ == '__main__':

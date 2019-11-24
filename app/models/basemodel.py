@@ -1,4 +1,6 @@
+import datetime
 import json
+from time import mktime
 from typing import List
 
 from models.db import redis as r
@@ -24,13 +26,13 @@ class BaseModel:
 
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
-            self.__setattr__(k, v)
+            setattr(self, k, v)
         self.id = kwargs.get('id') or self._generate_id(**kwargs)
 
     def save(self):
         d = dict()
         for attribute in self.get_attributes():
-            d[attribute] = self.__getattribute__(attribute)
+            d[attribute] = getattr(type(self), attribute).to_db(getattr(self, attribute))
         r.set(self.id, json.dumps(d))
 
     @classmethod
@@ -38,7 +40,11 @@ class BaseModel:
         data = r.get(id)
         if data is None:
             raise NotFound
-        return cls(**json.loads(data))
+
+        data = json.loads(data)
+        for k, v in data.items():
+            data[k] = getattr(cls, k).to_python(v)
+        return cls(**data)
 
     @classmethod
     def defaults(cls, **kwargs):
@@ -76,3 +82,56 @@ class BaseModel:
     def search(cls, **kwargs) -> List:
         db_key = cls.info_to_db_key(**kwargs)
         return [cls.load(key) for key in search(db_key)]
+
+
+class BaseField:
+    def __init__(self, default=None):
+        if callable(default):
+            default = default()
+        self.default = default
+
+    @staticmethod
+    def to_python(value):
+        return value
+
+    @staticmethod
+    def to_db(value):
+        return value
+
+
+class TextField(BaseField):
+    """
+    # check if entered data is text
+    # validators
+    # widget
+    # attribute label
+    """
+    pass
+
+
+class UserField(BaseField):
+    pass
+
+
+class IdField(BaseField):
+    pass
+
+
+class PasswordField(BaseField):
+    ...
+
+
+class EmailField(BaseField):
+    pass
+
+
+class DateField(BaseField):
+    @staticmethod
+    def to_db(value):
+        return mktime(value)
+
+    @staticmethod
+    def to_python(timestamp):
+        return datetime.fromtimestamp(timestamp)
+
+
