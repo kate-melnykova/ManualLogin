@@ -5,9 +5,9 @@
     <h2>My info: </h2>
     <p> Username: {{user.username}}</p>
     <p> First name: {{user.first_name}}</p>
-    <p> Date of birth: {{user.dob}} (will be changed to normal date soon)</p>
-    <p> Registered since: {{user.registration_date}} (will be changed to normal view soon)</p>
-    <p> Total number of posts: {{products|length}}</p>
+    <p> Date of birth: {{user.dob.strftime('%x')}}</p>
+    <p> Registered since: {{user.registration_date.strftime('%x')}} </p>
+    <p> Total number of posts: {{posts|length}}</p>
 </div>
 
 <h2> My posts </h2>
