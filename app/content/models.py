@@ -2,8 +2,9 @@ from typing import Dict
 from uuid import uuid4
 
 from models.db import redis
-from models.basemodel import BaseModel, ValidationError
+from models.basemodel import BaseModel
 from models.basemodel import IdField, TextField, UserField
+from models.exceptions import NotFound, ValidationError
 
 
 class BlogPost(BaseModel):

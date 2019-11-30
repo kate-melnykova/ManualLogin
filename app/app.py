@@ -5,32 +5,17 @@ from time import mktime
 from flask import Flask, render_template, request, url_for,\
     redirect, flash, make_response, Blueprint
 
-from app.models.basemodel import NotFound
 from app.auth import crypting
 from app.auth.models import User, AnonymousUser
 from app.content.models import BlogPost, RecentPosts
 from app.views.wtforms import LoginForm, RegistrationForm, BlogForm
-
-
-def page_not_found(e):
-    return render_template('404.html'), 404
-
-
-def forbidden(e):
-    return render_template('403.html'), 403
-
-
-def unauthorized(e):
-    return render_template('401.html'), 401
+from factory_app import create_app
+from models.exceptions import NotFound, ValidationError
 
 
 recent_posts = RecentPosts()
 
-app = Flask(__name__)
-app.secret_key = '7d8ed6dd-47e9-4fe6-bca5-ec62a721587e'
-app.register_error_handler(404, page_not_found)
-app.register_error_handler(403, forbidden)
-app.register_error_handler(401, unauthorized)
+app = create_app()
 
 
 @app.before_request
@@ -48,14 +33,16 @@ def get_current_user():
             print('Loading user based on cookies')
             try:
                 request.user = User.load(username)
+                print(f'User if found: {request.user.username}')
             except NotFound:
                 request.user = AnonymousUser()
+                print(f'AnonymousUser')
 
 
 def login_required(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
-        if isinstance(request.user, AnonymousUser):
+        if not request.user.is_authenticated:
             r = make_response(redirect(url_for('login')))
             r.delete_cookie('username')
             r.delete_cookie('first_name')
@@ -235,7 +222,7 @@ def profile():
     view_user = request.args.get('username')
     try:
         view_user = User.load(view_user)
-    except:
+    except NotFound:
         flash(f'Username {view_user} does not exist')
         return redirect(url_for('blogpost_recent'))
     else:

@@ -5,14 +5,7 @@ from typing import List
 
 from models.db import redis as r
 from models.db import search
-
-
-class NotFound(Exception):
-    message = 'Entry is not found in the database'
-
-
-class ValidationError(ValueError):
-    message = 'Inappropriate arguments'
+from models.exceptions import NotFound, ValidationError
 
 
 class BaseModel:
