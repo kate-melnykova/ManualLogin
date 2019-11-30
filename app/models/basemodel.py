@@ -26,6 +26,7 @@ class BaseModel:
         d = dict()
         for attribute in self.get_attributes():
             d[attribute] = getattr(type(self), attribute).to_db(getattr(self, attribute))
+        print(f'Data before saving: {json.dumps(d)}')
         r.set(self.id, json.dumps(d))
 
     @classmethod
@@ -34,6 +35,7 @@ class BaseModel:
         if data is None:
             raise NotFound
 
+        print(f'Loaded data: {data}')
         data = json.loads(data)
         for k, v in data.items():
             data[k] = getattr(cls, k).to_python(v)
@@ -93,12 +95,6 @@ class BaseField:
 
 
 class TextField(BaseField):
-    """
-    # check if entered data is text
-    # validators
-    # widget
-    # attribute label
-    """
     pass
 
 
