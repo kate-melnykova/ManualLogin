@@ -1,9 +1,8 @@
 from functools import wraps
 import datetime
-from time import mktime
 
-from flask import Flask, render_template, request, url_for,\
-    redirect, flash, make_response, Blueprint
+from flask import render_template, request, url_for,\
+    redirect, flash, make_response
 
 from app.auth import crypting
 from app.auth.models import User, AnonymousUser
@@ -27,21 +26,18 @@ def get_current_user():
         try:
             username = crypting.aes_decrypt(encrypted_username)
         except UnicodeDecodeError as ex:
-            print(f"An exception of type {type(ex).__name__} occurred.")
             request.user = AnonymousUser()
         else:
-            print('Loading user based on cookies')
             try:
                 request.user = User.load(username)
-                print(f'User if found: {request.user.username}')
             except NotFound:
                 request.user = AnonymousUser()
-                print(f'AnonymousUser')
 
 
 def login_required(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
+        print(request.user.username, request.user.is_authenticated)
         if not request.user.is_authenticated:
             r = make_response(redirect(url_for('login')))
             r.delete_cookie('username')
@@ -89,7 +85,6 @@ def login_processing():
 
         print(f'Login: user password is {user.password}')
         print(f'Login: password entered is {password}')
-        print(f'Login: loaded user is an object of class {type(user)}')
         if user.verify_password(password):
             encrypted_username = crypting.aes_encrypt(username)
             if loginform.rememberme.data:
@@ -143,24 +138,21 @@ def registration_processing():
         return redirect(url_for('registration'))
 
     username = form.username.data
-    print('Registration user loading')
-    try:
-        user = User.load(username)
-    except NotFound:
-        pass
+    print('Registration is loading')
+    if User.exists(username):
+        password = form.password.data
+        first_name = form.first_name.data
+        dob = form.dob.data.timetuple()
+        email = form.email.data
+        User.create(username=username, password=password,
+                    first_name=first_name, dob=dob,
+                    email=email)
+        flash('Registration is successful! Please login.')
+        return redirect(url_for('login'))
+
     else:
         flash('This username is not available')
         return redirect(url_for('registration'))
-
-    password = form.password.data
-    first_name = form.first_name.data
-    dob = form.dob.data.timetuple()
-    email = form.email.data
-    User.create(username=username, password=password,
-                first_name=first_name, dob=dob,
-                email=email)
-    flash('Registration is successful! Please login.')
-    return redirect(url_for('login'))
 
 
 @app.route('/hello_world')
@@ -175,15 +167,15 @@ def welcome():
     return render_template('welcome.html')
 
 
-@login_required
 @app.route('/blogpost_edit')
+@login_required
 def blogpost_edit():
     print('I am here')
     return render_template('blogpost_editor.html', blogform=BlogForm())
 
 
-@login_required
 @app.route('/blogpost/create', methods=['POST'])
+@login_required
 def blogpost_create():
     form = BlogForm(request.form)
     if not form.validate():
@@ -209,8 +201,8 @@ def blogpost_recent():
     return render_template('blogpost_recent.html', posts=posts)
 
 
-@login_required
 @app.route('/account')
+@login_required
 def account():
     user = request.user
     posts = BlogPost.search(author=user.username)

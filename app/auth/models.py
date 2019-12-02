@@ -1,10 +1,8 @@
 from time import time
 import json
 from passlib.hash import sha256_crypt
-from copy import copy
 from typing import Dict
 
-from models.db import redis as r
 from models.basemodel import BaseModel, ValidationError
 from models.basemodel import IdField, TextField, UserField, DateField, EmailField, PasswordField
 
@@ -95,10 +93,19 @@ class User(BaseUser):
         for attribute in self.get_attributes():
             data[attribute] = self.__getattribute__(attribute)
         print(f'data before saving is {data}')
+        r = self.get_connection()
         r.set(self.id, json.dumps(data))
 
     def verify_password(self, password: str) -> bool:
         return sha256_crypt.verify(password, self.password)
+
+    @classmethod
+    def exists(cls, username: str) -> bool:
+        """
+        checks if the user username is in the database
+        """
+        r = cls.get_connection()
+        return bool(r.exists(cls._generate_id(username=username)))
 
     @classmethod
     def load(cls, username: str) -> 'User':

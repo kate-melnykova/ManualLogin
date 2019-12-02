@@ -3,15 +3,19 @@ import json
 from time import mktime
 from typing import List
 
-from models.db import redis as r
 from models.db import search
 from models.exceptions import NotFound, ValidationError
 
 
 class BaseModel:
     @classmethod
+    def get_connection(cls):
+        from models.db import redis
+        return redis
+
+    @classmethod
     def get_attributes(cls):
-        return list(set(cls.attributes + ['id']))
+        return list(cls.defaults().keys())
 
     @staticmethod
     def _generate_id(**kwargs):
@@ -20,17 +24,24 @@ class BaseModel:
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
             setattr(self, k, v)
-        self.id = kwargs.get('id') or self._generate_id(**kwargs)
 
     def save(self):
         d = dict()
         for attribute in self.get_attributes():
             d[attribute] = getattr(type(self), attribute).to_db(getattr(self, attribute))
-        print(f'Data before saving: {json.dumps(d)}')
+        # print(f'Data before saving: {json.dumps(d)}')
+        r = self.get_connection()
         r.set(self.id, json.dumps(d))
 
     @classmethod
+    def exists(cls, id: str or int) -> bool:
+        r = cls.get_connection()
+        return bool(r.exists(id))
+
+
+    @classmethod
     def load(cls, id: str or int):
+        r = cls.get_connection()
         data = r.get(id)
         if data is None:
             raise NotFound
@@ -64,7 +75,6 @@ class BaseModel:
         attrs = cls.defaults(**kwargs)
         attrs.update(kwargs)
         cls.clean(attrs)
-        print(attrs)
         instance = cls(**attrs)
         instance.save()
         return instance
@@ -117,7 +127,7 @@ class EmailField(BaseField):
 class DateField(BaseField):
     @staticmethod
     def to_db(value):
-        return mktime(value)
+        return int(mktime(value.timetuple()))
 
     @staticmethod
     def to_python(timestamp):

@@ -1,7 +1,6 @@
 from typing import Dict
 from uuid import uuid4
 
-from models.db import redis
 from models.basemodel import BaseModel
 from models.basemodel import IdField, TextField, UserField
 from models.exceptions import NotFound, ValidationError
@@ -49,7 +48,8 @@ class RecentPosts:
     def __init__(self):
         idx = 1
         self.post_ids = []
-        for key in redis.scan_iter(match="blogpost:*"):
+        r = BlogPost.get_connection()
+        for key in r.scan_iter(match="blogpost:*"):
             self.post_ids.append(key)
             idx += 1
             if idx > 10:
