@@ -79,6 +79,7 @@ class BaseModel:
         instance.save()
         return instance
 
+
     @staticmethod
     def info_to_db_key(**kwargs) -> str:
         raise NotImplemented
@@ -105,22 +106,6 @@ class BaseField:
 
 
 class TextField(BaseField):
-    pass
-
-
-class UserField(BaseField):
-    pass
-
-
-class IdField(BaseField):
-    pass
-
-
-class PasswordField(BaseField):
-    ...
-
-
-class EmailField(BaseField):
     pass
 
 

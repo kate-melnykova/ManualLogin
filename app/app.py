@@ -1,3 +1,5 @@
+from collections import defaultdict
+import json
 from functools import wraps
 import datetime
 
@@ -121,13 +123,24 @@ def logout_process():
 
 @app.route('/registration')
 def registration():
+    form_error = request.cookies.get('form_error')
+    try:
+        form_error = json.loads(form_error)
+    except TypeError:
+        form_error = defaultdict(str)
+
     if request.user.is_authenticated:
+        r = make_response(redirect(url_for('hello_world')))
+        r.delete_cookie('form_error')
         flash('You are already logged in!')
-        return redirect(url_for('hello_world'))
+        return r
 
     regform = RegistrationForm()
-    return render_template('registration.html',
-                           regform=regform)
+    r = make_response(render_template('registration.html',
+                                      regform=regform,
+                                      form_error=form_error))
+    r.delete_cookie('form_error')
+    return r
 
 
 @app.route('/registration/processing', methods=["POST"])
@@ -135,7 +148,9 @@ def registration_processing():
     form = RegistrationForm(request.form)
     if not form.validate():
         flash('Error: incorrect entry in the form')
-        return redirect(url_for('registration'))
+        r = make_response(redirect(url_for('registration')))
+        r.set_cookie('form_error', json.dumps(form.errors))
+        return r
 
     username = form.username.data
     print('Registration is loading')
@@ -177,6 +192,10 @@ def blogpost_edit():
 @app.route('/blogpost/create', methods=['POST'])
 @login_required
 def blogpost_create():
+    if not request.user.is_authenticated:
+        flash('You are not logged in')
+        return redirect(url_for('login'))
+
     form = BlogForm(request.form)
     if not form.validate():
         flash('Error: incorrect entry in the form')

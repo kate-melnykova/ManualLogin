@@ -2,16 +2,16 @@ from typing import Dict
 from uuid import uuid4
 
 from models.basemodel import BaseModel
-from models.basemodel import IdField, TextField, UserField
+from models.basemodel import TextField
 from models.exceptions import NotFound, ValidationError
 
 
 class BlogPost(BaseModel):
-    id = IdField()
+    id = TextField()
     title = TextField(default='')
     content = TextField(default='')
-    author = UserField(default='')
-    author_id = IdField(default='')
+    author = TextField(default='')
+    author_id = TextField(default='')
 
 
     @staticmethod

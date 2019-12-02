@@ -4,16 +4,16 @@ from passlib.hash import sha256_crypt
 from typing import Dict
 
 from models.basemodel import BaseModel, ValidationError
-from models.basemodel import IdField, TextField, UserField, DateField, EmailField, PasswordField
+from models.basemodel import TextField, DateField
 
 
 class BaseUser(BaseModel):
-    id = IdField()
-    username = UserField(default='')
+    id = TextField()
+    username = TextField(default='')
     first_name = TextField(default='')
     dob = DateField(default='')
-    email = EmailField(default='')
-    password = PasswordField(default='')
+    email = TextField(default='')
+    password = TextField(default='')
     registration_date = DateField(default=int(time()))
 
     @staticmethod

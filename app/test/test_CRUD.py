@@ -15,6 +15,8 @@ from app.content.models import BlogPost
 #    test_client = app.test_client()
 #    yield test_client
 
+time = datetime.now()
+
 
 user_data_sample = {
     'username': 'username',
@@ -106,21 +108,21 @@ def test_load_blogpost_form_db_returns_object_in_python_format(_, __):
 user = User(username='username',
             password='hashed_password',
             id='user:username',
-            dob=datetime.now(),
-            registration_date=datetime.now())
+            dob=time,
+            registration_date=time)
 
 """
 @patch('app.auth.models.User.get_connection')
+@patch('model.db.redis.set')
 def test_save_user_from_user_object_to_db(user=user):
-    with patch('models.db.redis.set') as db_set:
-        user.save()
-        db_set.assert_call_once_with(b'"id": "user:username",'
-                                     b'"username": "username",'
-                                     b'"password": "hashed_password",'
-                                     b'"first_name": "", '
-                                     b'"dob": ????'
-                                     b'"email": "",'
-                                     b'"registration_date": ???')
+    user.save()
+    db_set.assert_call_once_with(b'"id": "user:username",'
+                                 b'"username": "username",'
+                                 b'"password": "hashed_password",'
+                                 b'"first_name": "", '
+                                 b'"dob": "' + str(time
+                                 b'"email": "",'
+                                 b'"registration_date": ???')
 """
 
 

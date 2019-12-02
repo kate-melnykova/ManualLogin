@@ -5,14 +5,86 @@
     <h1> Registration </h1>
     <form action="/registration/processing" method="POST">
         {{ regform.csrf }}
-        <p> {{ regform.username.label }}: {{ regform.username(class="css_class") }}</p>
-        <p> {{ regform.password.label }}: {{ regform.password(class="css_class") }}</p>
-        <p> {{ regform.confirm.label }}: {{ regform.confirm(class="css_class") }}</p>
-        <p> {{ regform.first_name.label }}: {{ regform.first_name(class="css_class") }}</p>
-        <p> {{ regform.dob.label }}: {{ regform.dob(class="css_class") }}</p>
-        <p> {{ regform.email.label }}: {{ regform.email(class="css_class") }}</p>
+        <table border="0" style="width:80%;border:0px">
+            <col align="right;">
+            <col align="left;">
+            <tr>
+                <td> {{ regform.username.label }} </td>
+                <td> {{ regform.username(class="css_class") }}
+                    {% if 'username' in form_error %}
+                        <span style="color:tomato; font-size:80%">
+                            {% for entry in form_error['username'] %}
+                                {{entry}}{{", " if not loop.last}}
+                            {% endfor %}
+                        </span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>{{ regform.password.label }}*</td>
+                <td>{{ regform.password(class="css_class") }}
+                    {% if 'password' in form_error %}
+                        <span style="color:tomato; font-size:80%">
+                            {% for entry in form_error['password'] %}
+                                {{entry}}{{", " if not loop.last}}
+                            {% endfor %}
+                        </span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>{{ regform.confirm.label }}*</td>
+                <td>{{ regform.confirm(class="css_class") }}
+                    {% if 'confirm' in form_error %}
+                        <span style="color:tomato; font-size:80%">
+                            {% for entry in form_error['confirm'] %}
+                                {{entry}}{{", " if not loop.last}}
+                            {% endfor %}
+                        </span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>{{ regform.first_name.label }}*</td>
+                <td>{{ regform.first_name(class="css_class") }}
+                    {% if 'first_name' in form_error %}
+                        <span style="color:tomato; font-size:80%">
+                            {% for entry in form_error['first_name'] %}
+                                {{entry}}{{", " if not loop.last}}
+                            {% endfor %}
+                        </span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>{{ regform.dob.label }}</td>
+                <td>{{ regform.dob(class="css_class") }}
+                    {% if 'dob' in form_error %}
+                        <span style="color:tomato; font-size:80%">
+                            {% for entry in form_error['dob'] %}
+                                {{entry}}{{", " if not loop.last}}
+                            {% endfor %}
+                        </span>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td>{{ regform.email.label }}*</td>
+                <td>{{ regform.email(class="css_class") }}
+                    {% if 'email' in form_error %}
+                        <span style="color:tomato; font-size:80%">
+                            {% for entry in form_error['email'] %}
+                                {{entry}}{{", " if not loop.last}}
+                            {% endfor %}
+                        </span>
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+        <p> All entries with * are required.</p>
         <p style="text-align: center;"><input type="submit" name="submit" value="submit"></p>
     </form>
 
     </fieldset>
+<div> Already have an account? Please <a href="/login">login</a>.</div>
 {% endblock %}
