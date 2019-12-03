@@ -12,7 +12,7 @@
 
 <h2> My posts </h2>
 {% for post in posts %}
-    <fieldset>
+    <fieldset style="width:80%; border: 0; table-layout: fixed; margin-left: auto; margin-right: auto">
         <p style="font-size:160%;"><b>{{post.title}}</b></p>
         <p style="font-size:80%;">
             <i><a href="/profile?username={{post.author}}">{{post.author}}</a></i>

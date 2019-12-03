@@ -1,15 +1,15 @@
 {% extends 'base.html' %}
 
 {% block form %}
-    <fieldset>
-    <h1> Registration </h1>
-    <form action="/registration/processing" method="POST">
+    <fieldset style="width:80%; margin:auto;">
+    <h1  style="text-align:center"> Registration </h1>
+    <form style="margin: auto" action="/registration/processing" method="POST">
         {{ regform.csrf }}
-        <table border="0" style="width:80%;border:0px">
-            <col align="right;">
-            <col align="left;">
+        <table style="width:50%; border: 0; table-layout: fixed; margin-left: auto; margin-right: auto">
+            <col align="right">
+            <col align="left">
             <tr>
-                <td> {{ regform.username.label }} </td>
+                <td style="width: 30%"> {{ regform.username.label }} </td>
                 <td> {{ regform.username(class="css_class") }}
                     {% if 'username' in form_error %}
                         <span style="color:tomato; font-size:80%">
@@ -81,10 +81,10 @@
                 </td>
             </tr>
         </table>
-        <p> All entries with * are required.</p>
+        <p style="text-align: center;"> All entries with * are required.</p>
         <p style="text-align: center;"><input type="submit" name="submit" value="submit"></p>
     </form>
 
+    <div style="text-align: center;"> Already have an account? Please <a href="/login">login</a>.</div>
     </fieldset>
-<div> Already have an account? Please <a href="/login">login</a>.</div>
 {% endblock %}

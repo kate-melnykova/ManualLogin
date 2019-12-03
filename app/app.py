@@ -59,12 +59,16 @@ def inject_user():
 
 @app.route('/login')
 def login():
+    form_error = request.cookies.get('form_error')
+    try:
+        form_error = json.load(form_error)
+    except TypeError:
+        form_error = defaultdict(str)
+    except AttributeError:
+        form_error = defaultdict(str)
     if not request.user.is_authenticated:
         login_form = LoginForm(request.form)
-        return render_template(
-            'login.html',
-            loginform=login_form
-        )
+        return render_template('login.html', loginform=login_form)
     return redirect(url_for('logout'))
 
 
@@ -82,8 +86,10 @@ def login_processing():
         try:
             user = User.load(username)
         except NotFound:
+            r = make_response(redirect(url_for('login')))
             flash("Incorrect credentials: please double-check username")
-            return redirect(url_for('login'))
+            r.set_cookie('form_error', json.dumps(loginform.errors))
+            return r
 
         print(f'Login: user password is {user.password}')
         print(f'Login: password entered is {password}')
@@ -126,7 +132,7 @@ def registration():
     form_error = request.cookies.get('form_error')
     try:
         form_error = json.loads(form_error)
-    except TypeError:
+    except TypeError or AttributeError:
         form_error = defaultdict(str)
 
     if request.user.is_authenticated:

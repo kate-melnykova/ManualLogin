@@ -47,16 +47,15 @@ div {
 }
 
 .h1 {
-  align-content: center;
+  text-align: center;
 }
 
 .h2 {
-  align-content: center;
+  text-align: center;
 }
 
 table{
   width: 80%;
-  border: 0px;
   border-collapse: collapse;
 }
 
@@ -75,4 +74,11 @@ form textarea#content {
      width: 80%;
      height: 300px;
      max-width: 800px;
+}
+
+.fieldset {
+  width: 80%;
+  table-layout: fixed;
+  margin-left: auto;
+  margin-right: auto;
 }
