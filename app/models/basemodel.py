@@ -38,7 +38,6 @@ class BaseModel:
         r = cls.get_connection()
         return bool(r.exists(id))
 
-
     @classmethod
     def load(cls, id: str or int):
         r = cls.get_connection()
@@ -75,10 +74,10 @@ class BaseModel:
         attrs = cls.defaults(**kwargs)
         attrs.update(kwargs)
         cls.clean(attrs)
+        print(f'Data to save {attrs}')
         instance = cls(**attrs)
         instance.save()
         return instance
-
 
     @staticmethod
     def info_to_db_key(**kwargs) -> str:
@@ -112,10 +111,16 @@ class TextField(BaseField):
 class DateField(BaseField):
     @staticmethod
     def to_db(value):
-        return int(mktime(value.timetuple()))
+        if value is None:
+            return ''
+        else:
+            return int(mktime(value.timetuple()))
 
     @staticmethod
     def to_python(timestamp):
-        return datetime.fromtimestamp(timestamp)
+        if timestamp == '':
+            return None
+        else:
+            return datetime.fromtimestamp(timestamp)
 
 

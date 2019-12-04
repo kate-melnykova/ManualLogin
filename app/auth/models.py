@@ -74,6 +74,7 @@ class BaseUser(BaseModel):
         :return: dictionary with cleaned user info
         """
         data['password'] = cls.hash_password(data['password'])
+        data['dob'] = data['dob'] or ''
         return data
 
     def verify_password(self, password: str) -> bool:
@@ -91,8 +92,9 @@ class User(BaseUser):
     def save(self) -> None:
         data = dict()
         for attribute in self.get_attributes():
-            data[attribute] = self.__getattribute__(attribute)
-        print(f'data before saving is {data}')
+            value = self.__getattribute__(attribute)
+            if value is not None:
+                data[attribute] = value
         r = self.get_connection()
         r.set(self.id, json.dumps(data))
 

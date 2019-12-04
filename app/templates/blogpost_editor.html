@@ -1,12 +1,22 @@
 {% extends 'base.html' %}
 
 {% block form %}
-    <fieldset>
-    <h2> Create/edit the blogpost </h2>
+    <fieldset style="width:80%; table-layout: fixed; margin-left: auto; margin-right: auto">
+    <h1> Create/edit the blogpost </h1>
     <form action="/blogpost/create" method="POST">
         {{ blogform.csrf }}
-        <p> {{ blogform.title.label }}: {{ blogform.title(class="css_class") }}</p>
-        <p> {{ blogform.content.label }}: {{ blogform.content(class="css_class") }}</p>
+        <table>
+            <col align="right">
+            <col align="left">
+            <tr>
+                <td width="15%">{{ blogform.title.label }}</td>
+                <td>{{ blogform.title(class="css_class", size=70) }}</td>
+            </tr>
+            <tr>
+                <td>{{ blogform.content.label }}</td>
+                <td>{{ blogform.content(class="css_class") }}</td>
+            </tr>
+        </table>
         <p style="text-align: center;"><input type="submit" name="submit" value="Create new post">
         {% if blogform.id %}
             <input type="submit" name="submit" value="Update">

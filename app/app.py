@@ -86,6 +86,7 @@ def login_processing():
         try:
             user = User.load(username)
         except NotFound:
+            print(f'user {username} is not found')
             r = make_response(redirect(url_for('login')))
             flash("Incorrect credentials: please double-check username")
             r.set_cookie('form_error', json.dumps(loginform.errors))
@@ -160,10 +161,10 @@ def registration_processing():
 
     username = form.username.data
     print('Registration is loading')
-    if User.exists(username):
+    if not User.exists(username):
         password = form.password.data
         first_name = form.first_name.data
-        dob = form.dob.data.timetuple()
+        dob = form.dob.data
         email = form.email.data
         User.create(username=username, password=password,
                     first_name=first_name, dob=dob,

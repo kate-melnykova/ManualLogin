@@ -1,18 +1,23 @@
 {% extends 'base.html' %}
 
 {% block form %}
+<h1>My info: </h1>
 <div>
-    <h2>My info: </h2>
     <p> Username: {{user.username}}</p>
     <p> First name: {{user.first_name}}</p>
-    <p> Date of birth: {{user.dob.strftime('%x')}}</p>
+    <p> Date of birth: {% if user.dob is none %}
+        N/A
+        {% else %}
+        {{user.dob.strftime('%x')}}
+        {% endif %}
+    </p>
     <p> Registered since: {{user.registration_date.strftime('%x')}} </p>
     <p> Total number of posts: {{posts|length}}</p>
 </div>
 
-<h2> My posts </h2>
+<h1> My posts </h1>
 {% for post in posts %}
-    <fieldset style="width:80%; border: 0; table-layout: fixed; margin-left: auto; margin-right: auto">
+    <fieldset style="width:80%; table-layout: fixed; margin-left: auto; margin-right: auto">
         <p style="font-size:160%;"><b>{{post.title}}</b></p>
         <p style="font-size:80%;">
             <i><a href="/profile?username={{post.author}}">{{post.author}}</a></i>
