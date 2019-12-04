@@ -160,7 +160,6 @@ def registration_processing():
         return r
 
     username = form.username.data
-    print('Registration is loading')
     if not User.exists(username):
         password = form.password.data
         first_name = form.first_name.data

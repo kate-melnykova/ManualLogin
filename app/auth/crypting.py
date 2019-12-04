@@ -6,8 +6,7 @@ from Crypto.Random import get_random_bytes
 
 # key = get_random_bytes(16)
 key = b'u\xfa\x1f\x9a\x14\x19&\xe7b#\x86\xdd\x94\x0f[N'
-cipher = AES.new(key, AES.MODE_EAX)
-nonce = cipher.nonce
+cipher = AES.new(key, AES.MODE_ECB)
 
 
 class WrongUserError(Exception):
@@ -24,19 +23,15 @@ def aes_encrypt(data: str) -> str:
     length = 16 - (len(data) % 16)
     data += chr(length) * length
 
-    cipher_new = AES.new(key, AES.MODE_EAX, nonce=nonce)
-    ciphertext = cipher_new.encrypt(data.encode('utf-8'))
+    ciphertext = cipher.encrypt(data.encode('utf-8'))
     ciphertext = base64.b64encode(ciphertext)
     return ciphertext.decode('utf-8')
 
 
 def aes_decrypt(ciphertext: str) -> str:
-    cipher_new = AES.new(key, AES.MODE_EAX, nonce=nonce)
-    ciphertext = ciphertext.encode()
     ciphertext = base64.b64decode(ciphertext)
-    data = cipher_new.decrypt(ciphertext)
-    data = data.decode()
+    data = cipher.decrypt(ciphertext)
     # crop extra tildes on the right
-    return data[:-ord(data[-1])]
+    return data[:-data[-1]].decode('utf-8')
 
 
