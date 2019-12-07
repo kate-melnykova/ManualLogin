@@ -1,16 +1,11 @@
 import base64
-import json
 
 from Crypto.Cipher import AES
-from Crypto.Random import get_random_bytes
+# from Crypto.Random import get_random_bytes
 
 # key = get_random_bytes(16)
 key = b'u\xfa\x1f\x9a\x14\x19&\xe7b#\x86\xdd\x94\x0f[N'
 cipher = AES.new(key, AES.MODE_ECB)
-
-
-class WrongUserError(Exception):
-    message = 'Error during decryption'
 
 
 def aes_encrypt(data: str) -> str:

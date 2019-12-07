@@ -14,7 +14,7 @@ class BaseUser(BaseModel):
     dob = DateField(default='')
     email = TextField(default='')
     password = TextField(default='')
-    registration_date = DateField(default=int(time()))
+    date = DateField(default=int(time()))
 
     @staticmethod
     def _generate_id(**kwargs) -> str:
@@ -55,7 +55,7 @@ class BaseUser(BaseModel):
             'first_name': cls.first_name.default,
             'dob': cls.dob.default,
             'email': cls.email.default,
-            'registration_date': cls.registration_date.default
+            'date': cls.date.default
         }
 
     @classmethod

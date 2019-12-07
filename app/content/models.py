@@ -1,8 +1,9 @@
+from time import time
 from typing import Dict
 from uuid import uuid4
 
 from models.basemodel import BaseModel
-from models.basemodel import TextField
+from models.basemodel import TextField, DateField
 from models.exceptions import NotFound, ValidationError
 
 
@@ -12,7 +13,7 @@ class BlogPost(BaseModel):
     content = TextField(default='')
     author = TextField(default='')
     author_id = TextField(default='')
-
+    date = DateField(default=int(time()))
 
     @staticmethod
     def validate(data: Dict):
@@ -31,6 +32,7 @@ class BlogPost(BaseModel):
             'author_id': cls.author_id.default,
             'title': cls.title.default,
             'content': cls.content.default,
+            'date': cls.date.default
         }
 
     @classmethod
