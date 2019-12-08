@@ -27,7 +27,7 @@ class BlogPost(BaseModel):
     @classmethod
     def defaults(cls, **kwargs):
         return {
-            'id': cls._generate_id(id=kwargs.get('id'), author=kwargs.get('author')),
+            'id': cls._generate_id(author=kwargs.get('author')),
             'author': cls.author.default,
             'author_id': cls.author_id.default,
             'title': cls.title.default,
@@ -61,6 +61,38 @@ class RecentPosts:
         self.post_ids = [id] + self.post_ids
         if len(self.post_ids) > self.max_posts:
             del self.post_ids[-1]
+
+
+class Likes(BaseModel):
+    id = TextField(default='')
+    blogpost_id = TextField(default='')
+    user_id = TextField(default='')
+
+    @staticmethod
+    def validate(data: Dict):
+        r = Likes.get_connection()
+        return 'id' in data and 'user_id' in data and 'blogpost_id' in data
+
+    @staticmethod
+    def _generate_id(**kwargs):
+        return f'like:{kwargs["user_id"]}:{kwargs["blogpost_id"]}'
+
+    @classmethod
+    def defaults(cls, **kwargs):
+        return {
+            'id': cls._generate_id(user_id=kwargs.get('user_id'), blogpost_id=kwargs.get('blogpost_id')),
+            'blogpost_id': cls.blogpost_id.default,
+            'user_id': cls.user_id.default
+        }
+
+    @classmethod
+    def get_attributes(cls):
+        return list(cls.defaults().keys())
+
+    @staticmethod
+    def info_to_db_key(**kwargs) -> str:
+        return f'like:{kwargs["user_id"]}:{kwargs["blogpost_id"]}'
+
 
 
 

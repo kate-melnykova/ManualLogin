@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from datetime import datetime
 import json
 from time import mktime
@@ -7,7 +8,7 @@ from models.db import search
 from models.exceptions import NotFound, ValidationError
 
 
-class BaseModel:
+class BaseModel(ABC):
     @classmethod
     def get_connection(cls):
         from models.db import redis
@@ -18,8 +19,9 @@ class BaseModel:
         return list(cls.defaults().keys())
 
     @staticmethod
+    @abstractmethod
     def _generate_id(**kwargs):
-        raise NotImplemented
+        pass
 
     def __init__(self, **kwargs):
         for k, v in kwargs.items():
@@ -80,8 +82,9 @@ class BaseModel:
         return instance
 
     @staticmethod
+    @abstractmethod
     def info_to_db_key(**kwargs) -> str:
-        raise NotImplemented
+        pass
 
     @classmethod
     def search(cls, **kwargs) -> List:

@@ -1,11 +1,11 @@
+from time import time, mktime
 from datetime import datetime
 from unittest.mock import patch, Mock, MagicMock
 
 import pytest
 from passlib.hash import sha256_crypt
 
-#from app.app import app
-from app.models.basemodel import BaseModel
+# from app.app import app
 from app.auth.models import User, AnonymousUser
 from app.content.models import BlogPost
 
@@ -104,26 +104,24 @@ def test_load_blogpost_form_db_returns_object_in_python_format(_, __):
     # assert isinstance(post.content, ManualType)
     assert isinstance(post.author, str), 'post.author is not a string'
 
-
+current_time = time()
 user = User(username='username',
             password='hashed_password',
             id='user:username',
-            dob=time,
-            registration_date=time)
+            dob=current_time,
+            registration_date=current_time)
 
-"""
 @patch('app.auth.models.User.get_connection')
 @patch('model.db.redis.set')
-def test_save_user_from_user_object_to_db(user=user):
+def test_save_user_from_user_object_to_db(_, writer):
     user.save()
-    db_set.assert_call_once_with(b'"id": "user:username",'
+    writer.assert_call_once_with(b'"id": "user:username",'
                                  b'"username": "username",'
                                  b'"password": "hashed_password",'
-                                 b'"first_name": "", '
-                                 b'"dob": "' + str(time
+                                 b'"first_name": "",'
+                                 b'"dob": "' + str(int(mktime(current_time.timetuple()))) + b'",' +
                                  b'"email": "",'
-                                 b'"registration_date": ???')
-"""
+                                 b'"registration_date": ' + str(int(mktime(current_time.timetuple()))) + b'"')
 
 
 

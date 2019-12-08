@@ -86,7 +86,6 @@ class BaseUser(BaseModel):
 
 
 class User(BaseUser):
-
     is_authenticated = True
 
     def save(self) -> None:
