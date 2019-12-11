@@ -70,7 +70,7 @@ db_sample_user = b'{"id": "user:username",' \
                  b' "first_name": "first name",' \
                  b' "dob": 600000000.0,' \
                  b' "email": "fake_email@email.com",' \
-                 b' "registration_date": 1570000000,' \
+                 b' "date": 1570000000,' \
                  b' "username": "username"}'
 
 
@@ -83,7 +83,7 @@ def test_load_user_form_db_returns_object_in_python_format(_):
     assert isinstance(user.first_name, str), 'user.first_name is not a string'
     assert isinstance(user.dob, datetime), 'user.dob is not a datetime'
     assert isinstance(user.email, str), 'user.email is not a string'
-    assert isinstance(user.registration_date, datetime), 'user.registration_date is not a datetime'
+    assert isinstance(user.date, datetime), 'user.date is not a datetime'
     assert isinstance(user.username, str), 'user.username is not a string'
 
 
@@ -109,7 +109,7 @@ user = User(username='username',
             password='hashed_password',
             id='user:username',
             dob=current_time,
-            registration_date=current_time)
+            date=current_time)
 
 @patch('app.auth.models.User.get_connection')
 @patch('model.db.redis.set')
@@ -121,7 +121,7 @@ def test_save_user_from_user_object_to_db(_, writer):
                                  b'"first_name": "",'
                                  b'"dob": "' + str(int(mktime(current_time.timetuple()))) + b'",' +
                                  b'"email": "",'
-                                 b'"registration_date": ' + str(int(mktime(current_time.timetuple()))) + b'"')
+                                 b'"date": ' + str(int(mktime(current_time.timetuple()))) + b'"')
 
 
 

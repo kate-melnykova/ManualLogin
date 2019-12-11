@@ -1,3 +1,4 @@
+from datetime import datetime
 from time import time
 import json
 from passlib.hash import sha256_crypt
@@ -5,22 +6,36 @@ from typing import Dict
 
 from models.basemodel import BaseModel, ValidationError
 from models.basemodel import TextField, DateField
+from models.db import DB
 
 
-class BaseUser(BaseModel):
-    id = TextField()
+class User(BaseModel):
+    _is_authenticated = True
+
+    @classmethod
+    def is_authenticated(cls):
+        return cls._is_authenticated
+
+    @classmethod
+    def get_attributes(cls):
+        return ['id', 'username', 'password', 'first_name', 'dob', 'email', 'date']
+
+    id = TextField(default=lambda kwargs: User._generate_id(**kwargs))
     username = TextField(default='')
     first_name = TextField(default='')
     dob = DateField(default='')
     email = TextField(default='')
     password = TextField(default='')
-    date = DateField(default=int(time()))
+    # date = DateField(default=lambda kwargs: datetime.now())
 
     @staticmethod
     def _generate_id(**kwargs) -> str:
         """
         generates db primary key
         """
+        if 'username' not in kwargs:
+            raise
+
         return f'user:{kwargs["username"]}'
 
     @staticmethod
@@ -31,6 +46,13 @@ class BaseUser(BaseModel):
         :return: hashed password
         """
         return sha256_crypt.encrypt(password)
+
+    def verify_password(self, password: str) -> bool:
+        """
+        verifies that the password matches the hashed password
+        :param password: unhashed password
+        """
+        return sha256_crypt.verify(password, self.password)
 
     @staticmethod
     def validate(data: Dict) -> None:
@@ -43,30 +65,6 @@ class BaseUser(BaseModel):
             raise ValidationError
 
     @classmethod
-    def defaults(cls, **kwargs):
-        """
-        specify default values of all user attributes.
-        :param kwargs: all user data. Please make sure that this data contains username
-        """
-        return {
-            'id': cls._generate_id(username=kwargs.get('username')),
-            'username': cls.username.default,
-            'password': cls.password.default,
-            'first_name': cls.first_name.default,
-            'dob': cls.dob.default,
-            'email': cls.email.default,
-            'date': cls.date.default
-        }
-
-    @classmethod
-    def get_attributes(cls):
-        return list(cls.defaults().keys())
-
-    @staticmethod
-    def info_to_db_key(**kwargs) -> str:
-        return f'user:{kwargs["username"]}' if 'username' in kwargs else 'user:*'
-
-    @classmethod
     def clean(cls, data: Dict) -> Dict:
         """
         prepares the data for saving
@@ -77,36 +75,16 @@ class BaseUser(BaseModel):
         data['dob'] = data['dob'] or ''
         return data
 
-    def verify_password(self, password: str) -> bool:
-        """
-        verifies that the password matches the hashed password
-        :param password: unhashed password
-        """
-        return False
-
-
-class User(BaseUser):
-    is_authenticated = True
-
-    def save(self) -> None:
-        data = dict()
-        for attribute in self.get_attributes():
-            value = self.__getattribute__(attribute)
-            if value is not None:
-                data[attribute] = value
-        r = self.get_connection()
-        r.set(self.id, json.dumps(data))
-
-    def verify_password(self, password: str) -> bool:
-        return sha256_crypt.verify(password, self.password)
+    @staticmethod
+    def info_to_db_key(**kwargs) -> str:
+        return f'user:{kwargs["username"]}' if 'username' in kwargs else 'user:*'
 
     @classmethod
     def exists(cls, username: str) -> bool:
         """
         checks if the user username is in the database
         """
-        r = cls.get_connection()
-        return bool(r.exists(cls._generate_id(username=username)))
+        return bool(DB.exists(cls._generate_id(username=username)))
 
     @classmethod
     def load(cls, username: str) -> 'User':
@@ -118,9 +96,20 @@ class User(BaseUser):
         return super().load(cls._generate_id(username=username))
 
 
-class AnonymousUser(BaseUser):
-    is_authenticated = False
+class AnonymousUser(User):
+    _is_authenticated = False
 
     def __init__(self):
         super().__init__(username='AnonymousUser')
+
+    @classmethod
+    def get_attributes(cls):
+        return ['id', 'username', 'date']
+
+    @classmethod
+    def load(cls, username:str) -> 'User':
+        return User.load(username)
+
+    def save(self):
+        raise
 

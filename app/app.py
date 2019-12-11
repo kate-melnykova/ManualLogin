@@ -27,7 +27,7 @@ def get_current_user():
     else:
         try:
             username = crypting.aes_decrypt(encrypted_username)
-        except UnicodeDecodeError as ex:
+        except UnicodeDecodeError:
             request.user = AnonymousUser()
         else:
             try:
@@ -39,8 +39,8 @@ def get_current_user():
 def login_required(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
-        print(request.user.username, request.user.is_authenticated)
-        if not request.user.is_authenticated:
+        print(request.user.username, request.user.is_authenticated())
+        if not request.user.is_authenticated():
             r = make_response(redirect(url_for('login')))
             r.delete_cookie('username')
             r.delete_cookie('first_name')
@@ -66,7 +66,7 @@ def login():
         form_error = defaultdict(str)
     except AttributeError:
         form_error = defaultdict(str)
-    if not request.user.is_authenticated:
+    if not request.user.is_authenticated():
         login_form = LoginForm(request.form)
         return render_template('login.html', loginform=login_form)
     return redirect(url_for('logout'))
@@ -74,7 +74,7 @@ def login():
 
 @app.route('/login/processing', methods=["POST"])
 def login_processing():
-    if request.user.is_authenticated:
+    if request.user.is_authenticated():
         flash('You are already logged in!')
         return redirect(url_for('hello_world'))
 
@@ -136,7 +136,7 @@ def registration():
     except TypeError or AttributeError:
         form_error = defaultdict(str)
 
-    if request.user.is_authenticated:
+    if request.user.is_authenticated():
         r = make_response(redirect(url_for('hello_world')))
         r.delete_cookie('form_error')
         flash('You are already logged in!')
@@ -198,7 +198,7 @@ def blogpost_edit():
 @app.route('/blogpost/create', methods=['POST'])
 @login_required
 def blogpost_create():
-    if not request.user.is_authenticated:
+    if not request.user.is_authenticated():
         flash('You are not logged in')
         return redirect(url_for('login'))
 
@@ -223,15 +223,17 @@ def blogpost_create():
 @app.route('/blogpost_recent')
 def blogpost_recent():
     posts = [BlogPost.load(post_id) for post_id in recent_posts.post_ids]
+    likes = []
+    for post in posts:
+        pass
     return render_template('blogpost_recent.html', posts=posts)
 
 
 @app.route('/account')
 @login_required
 def account():
-    user = request.user
-    posts = BlogPost.search(author=user.username)
-    return render_template('account.html', user=user, posts=posts)
+    posts = BlogPost.search(author=request.user.username)
+    return render_template('account.html', posts=posts)
 
 
 @app.route('/profile')
