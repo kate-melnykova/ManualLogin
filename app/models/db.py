@@ -8,24 +8,19 @@ from redis import Redis, exceptions
 #     return redis.scan_iter(match=key)
 
 
-class DBmetaclass(type):
-    def __init__(cls, *args, **kwargs):
-        cls._redis = Redis.from_url(url=f'redis://redis:6379/0')
+class DB:
+    def __init__(self):
+        self._redis = Redis.from_url(url=f'redis://redis:6379/0')
 
     @property
-    def redis(cls) -> 'Redis':
+    def redis(self) -> 'Redis':
         try:
-            cls._redis.ping()
-        except exceptions.ConnectionError:
-            cls._redis = Redis.from_url(url=f'redis://redis:6379/0')
-        except exceptions.BusyLoadingError:
-            return Redis.from_url(url=f'redis://redis:6379/0')
+            self._redis.ping()
+        except (exceptions.ConnectionError, exceptions.BusyLoadingError, ):
+            self._redis = Redis.from_url(url=f'redis://redis:6379/0')
 
-        return cls._redis
+        return self._redis
 
-
-class DB(metaclass=DBmetaclass):
-    @classmethod
     def load(cls, key: str) -> str or None:
         """
         loads the value stored under given key
@@ -34,27 +29,24 @@ class DB(metaclass=DBmetaclass):
         """
         return cls.redis.get(key)
 
-    @classmethod
-    def search(cls, pattern: str) -> 'iter':
+    def search(self, pattern: str) -> 'iter':
         """
         Find all keys that match given regex pattern
         :param pattern: the regex pattern for db keys
         :return: iterator over values that match the given pattern
         """
-        keys = cls.redis.scan_iter(match=pattern)
+        keys = self.redis.scan_iter(match=pattern)
         for key in keys:
-            yield json.loads(cls.redis.get(key))
+            yield json.loads(self.redis.get(key))
 
-    @classmethod
-    def exists(cls, key: int or str) -> bool:
+    def exists(self, key: int or str) -> bool:
         """
         Verifies if the exists given key in the db
         :param key: the potential key of the db
         :return: true if the key is in db, false otherwise
         """
-        return bool(cls.redis.exists(key))
+        return bool(self.redis.exists(key))
 
-    @classmethod
     def save(cls, key: str, value: str) -> None:
         """
         Add/update db record for given (key, value) pair
@@ -63,10 +55,11 @@ class DB(metaclass=DBmetaclass):
         """
         cls.redis.set(key, value)
 
-    @classmethod
     def delete(cls, key: str) -> None:
         """
         Remove the (key, value) pair from the db
         :param key: the key in the db
         """
         cls.redis.delete(key)
+
+db = DB()

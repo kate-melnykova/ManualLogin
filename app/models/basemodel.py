@@ -6,15 +6,18 @@ from typing import List
 from uuid import uuid4
 
 # from models.db import search
-from models.db import DB
+from models.db import db
 from models.exceptions import NotFound, ValidationError
 
 
 class BaseField(ABC):
+    __slots__ = ['default', 'value']
+
     def __init__(self, default=None):
         # if callable(default):
         #   default = default()
         self.default = default
+        self.value = default
 
     @staticmethod
     def to_python(value):
@@ -47,9 +50,15 @@ class DateField(BaseField):
 
 
 class BaseModel(ABC):
+    def __getattribute__(self, name, get_field=False):
+        value = super().__getattribute__(name)
+        if isinstance(value, BaseField) and not get_field:
+            return value.value
+        return value
+
     @classmethod
     def get_attributes(cls):
-        return ['id', 'date']
+        return [value for value in cls.__dict__.values() if isinstance(value, BaseField)]
 
     id = TextField(default='')
     date = DateField(default=lambda kwargs: datetime.now())
@@ -83,16 +92,16 @@ class BaseModel(ABC):
             print(f'Saving... {attribute}, {getattr(self, attribute)}')
             d[attribute] = getattr(type(self), attribute).to_db(getattr(self, attribute))
         print(f'Data ready for saving: {d}')
-        DB.save(self.id, json.dumps(d))
+        db.save(self.id, json.dumps(d))
 
     @classmethod
     def exists(cls, id: str or int) -> bool:
-        return DB.exists(id)
+        return db.exists(id)
 
     @classmethod
     def load(cls, id: str):
         print(f'Loading: id={id}')
-        data = DB.load(id)
+        data = db.load(id)
         if data is None:
             raise NotFound
 
@@ -132,6 +141,6 @@ class BaseModel(ABC):
 
     @classmethod
     def search(cls, **kwargs) -> List:
-        return list(DB.search(cls.info_to_db_key(**kwargs)))
+        return list(db.search(cls.info_to_db_key(**kwargs)))
 
 

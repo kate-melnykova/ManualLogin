@@ -5,7 +5,7 @@ from uuid import uuid4
 
 from models.basemodel import BaseModel
 from models.basemodel import TextField, DateField
-from models.db import DB
+from models.db import db
 from models.exceptions import NotFound, ValidationError
 
 
@@ -40,7 +40,7 @@ class RecentPosts:
     def __init__(self):
         idx = 1
         self.post_ids = []
-        for post in DB.search("blogpost:*"):
+        for post in db.search("blogpost:*"):
             self.post_ids.append(post['id'])
             idx += 1
             if idx > 10:

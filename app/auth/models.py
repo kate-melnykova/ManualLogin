@@ -6,7 +6,7 @@ from typing import Dict
 
 from models.basemodel import BaseModel, ValidationError
 from models.basemodel import TextField, DateField
-from models.db import DB
+from models.db import db
 
 
 class User(BaseModel):
@@ -84,7 +84,7 @@ class User(BaseModel):
         """
         checks if the user username is in the database
         """
-        return bool(DB.exists(cls._generate_id(username=username)))
+        return bool(db.exists(cls._generate_id(username=username)))
 
     @classmethod
     def load(cls, username: str) -> 'User':
