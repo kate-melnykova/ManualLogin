@@ -37,7 +37,7 @@ class DB:
         """
         keys = self.redis.scan_iter(match=pattern)
         for key in keys:
-            yield json.loads(self.redis.get(key))
+            yield self.redis.get(key)
 
     def exists(self, key: int or str) -> bool:
         """

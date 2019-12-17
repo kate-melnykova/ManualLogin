@@ -16,10 +16,6 @@ class User(BaseModel):
     def is_authenticated(cls):
         return cls._is_authenticated
 
-    @classmethod
-    def get_attributes(cls):
-        return ['id', 'username', 'password', 'first_name', 'dob', 'email', 'date']
-
     id = TextField(default=lambda kwargs: User._generate_id(**kwargs))
     username = TextField(default='')
     first_name = TextField(default='')

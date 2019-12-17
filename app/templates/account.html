@@ -13,12 +13,9 @@
         {% endif %}
     </p>
     <p> Registered since: {{user.date.strftime('%x')}} </p>
-    <p> Total number of posts: {{posts|length}}</p>
+    <!--<p> Total number of posts: </p>-->
 </div>
 <h1> My posts </h1>
-{% if posts|length == 0 %}
-<div> No posts yet! <a href="/blogpost_edit">Create a new post</a></div>
-{% else %}
 {% for post in posts %}
     <fieldset style="width:80%; table-layout: fixed; margin-left: auto; margin-right: auto">
         <p style="font-size:160%;"><b>{{post.title}}</b></p>
@@ -26,8 +23,9 @@
             <i><a href="/profile?username={{post.author}}">{{post.author}}</a></i>
         </p>
         <p> {{post.content}} </p>
+        <p style="font-size: small;">{{post.date}}</p>
     </fieldset>
     <br>
 {% endfor %}
-{% endif %}
+<p><a href="/blogpost_edit">Create a new post</a></p>
 {% endblock %}

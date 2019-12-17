@@ -39,7 +39,6 @@ def get_current_user():
 def login_required(func):
     @wraps(func)
     def wrapped(*args, **kwargs):
-        print(request.user.username, request.user.is_authenticated())
         if not request.user.is_authenticated():
             r = make_response(redirect(url_for('login')))
             r.delete_cookie('username')
@@ -191,7 +190,6 @@ def welcome():
 @app.route('/blogpost_edit')
 @login_required
 def blogpost_edit():
-    print('I am here')
     return render_template('blogpost_editor.html', blogform=BlogForm())
 
 
@@ -222,18 +220,20 @@ def blogpost_create():
 
 @app.route('/blogpost_recent')
 def blogpost_recent():
-    posts = [BlogPost.load(post_id) for post_id in recent_posts.post_ids]
+    posts = (BlogPost.load(post_id) for post_id in recent_posts.posts)
     likes = []
-    for post in posts:
-        pass
+    # for post in posts:
+    #    pass
     return render_template('blogpost_recent.html', posts=posts)
 
 
 @app.route('/account')
 @login_required
 def account():
-    posts = BlogPost.search(author=request.user.username)
-    return render_template('account.html', posts=posts)
+    posts_iter = BlogPost.search(author=request.user.username)
+    # for post in posts_iter:
+    #    print(f'Inside account: post={post}')
+    return render_template('account.html', posts=posts_iter)
 
 
 @app.route('/profile')

@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 from time import time
 from typing import Dict
 from uuid import uuid4
@@ -9,16 +10,41 @@ from models.db import db
 from models.exceptions import NotFound, ValidationError
 
 
-class BlogPost(BaseModel):
-    @classmethod
-    def get_attributes(cls):
-        return ['id', 'author', 'author_id', 'title', 'content', 'date']
+class RecentPosts:
+    max_posts = 10
 
+    def __init__(self):
+        self.idx = 1
+        self.posts = []
+        for post in db.search("blogpost:*"):
+            post = json.loads(post)
+            self.posts.append(post['id'])
+            self.idx += 1
+            if self.idx == self.max_posts:
+                break
+
+    def add(self, id: str) -> None:
+        self.posts = [id] + self.posts
+        if self.idx > self.max_posts:
+            del self.posts[-1]
+            self.idx -= 1
+
+
+recent_posts = RecentPosts()
+
+
+class BlogPost(BaseModel):
     id = TextField(default=lambda kwargs: BlogPost._generate_id(**kwargs))
     title = TextField(default='')
     content = TextField(default='')
     author = TextField(default='')
     author_id = TextField(default='')
+
+    @classmethod
+    def create(cls, **kwargs):
+        instance = super().create(**kwargs)
+        recent_posts.add(instance.id)
+        return instance
 
     @staticmethod
     def _generate_id(**kwargs):
@@ -33,23 +59,9 @@ class BlogPost(BaseModel):
     def info_to_db_key(**kwargs) -> str:
         return f'blogpost:*:{kwargs["author"]}' if 'author' in kwargs else 'blogpost:*'
 
-
-class RecentPosts:
-    max_posts = 10
-
-    def __init__(self):
-        idx = 1
-        self.post_ids = []
-        for post in db.search("blogpost:*"):
-            self.post_ids.append(post['id'])
-            idx += 1
-            if idx > 10:
-                break
-
-    def add(self, id: str) -> None:
-        self.post_ids = [id] + self.post_ids
-        if len(self.post_ids) > self.max_posts:
-            del self.post_ids[-1]
+    def __str__(self):
+        return f'Blogpost:\n \t id: {self.id}\n \t author: {self.author}\n' + \
+               f'\t title: {self.title}\n \t content: {self.content}'
 
 
 class Likes(BaseModel):
@@ -66,17 +78,6 @@ class Likes(BaseModel):
     def _generate_id(**kwargs):
         return f'like:{kwargs["user_id"]}:{kwargs["blogpost_id"]}'
 
-    @classmethod
-    def defaults(cls, **kwargs):
-        return {
-            'id': cls._generate_id(user_id=kwargs.get('user_id'), blogpost_id=kwargs.get('blogpost_id')),
-            'blogpost_id': cls.blogpost_id.default,
-            'user_id': cls.user_id.default
-        }
-
-    @classmethod
-    def get_attributes(cls):
-        return list(cls.defaults().keys())
 
     @staticmethod
     def info_to_db_key(**kwargs) -> str:

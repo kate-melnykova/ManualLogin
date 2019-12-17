@@ -23,9 +23,13 @@ class BaseField(ABC):
     def to_python(value):
         return value
 
-    @staticmethod
-    def to_db(value):
-        return value
+    def to_db(self):
+        return self.value
+
+    def clone(self):
+        instance = self.__class__(default=self.default)
+        instance.value = self.value
+        return instance
 
 
 class TextField(BaseField):
@@ -33,13 +37,11 @@ class TextField(BaseField):
 
 
 class DateField(BaseField):
-    @staticmethod
-    def to_db(value):
-        print(f'Converting DateField for db storage: value={value}')
-        if value is '' or None:
+    def to_db(self):
+        if self.value is '' or None:
             return ''
         else:
-            return int(mktime(value.timetuple()))
+            return int(mktime(self.value.timetuple()))
 
     @staticmethod
     def to_python(timestamp):
@@ -50,33 +52,34 @@ class DateField(BaseField):
 
 
 class BaseModel(ABC):
-    def __getattribute__(self, name, get_field=False):
-        value = super().__getattribute__(name)
-        if isinstance(value, BaseField) and not get_field:
-            return value.value
-        return value
-
     @classmethod
     def get_attributes(cls):
-        return [value for value in cls.__dict__.values() if isinstance(value, BaseField)]
+        return [attr for attr in dir(cls) if isinstance(getattr(cls, attr), BaseField)]
+
+    def __getattribute__(self, name, get_field=False):
+        cur_value = object.__getattribute__(self, name)
+        if not get_field and isinstance(cur_value, BaseField):
+            return cur_value.value
+
+        return cur_value
+
+    def __setattr__(self, name, value):
+        try:
+            cur_value = object.__getattribute__(self, name)
+        except AttributeError:
+            self.__dict__[name] = value
+        else:
+            if isinstance(cur_value, BaseField):
+                cur_value = cur_value.clone()
+                cur_value.value = value
+                self.__dict__[name] = cur_value
+                # setattr(self, name, cur_value)
+            else:
+                self.__dict__[name] = value
+                # setattr(self, name, value)
 
     id = TextField(default='')
     date = DateField(default=lambda kwargs: datetime.now())
-
-    @classmethod
-    def defaults(cls, **kwargs):
-        """
-        specify default values of all user attributes.
-        :param kwargs: all user data. Please make sure that this data contains username
-        """
-        data = dict()
-        for attribute in cls.get_attributes():
-            default = getattr(cls, attribute).default
-            if callable(default):
-                data[attribute] = default(kwargs)
-            else:
-                data[attribute] = default
-        return data
 
     @staticmethod
     def _generate_id(**kwargs):
@@ -89,27 +92,12 @@ class BaseModel(ABC):
     def save(self):
         d = dict()
         for attribute in self.get_attributes():
-            print(f'Saving... {attribute}, {getattr(self, attribute)}')
-            d[attribute] = getattr(type(self), attribute).to_db(getattr(self, attribute))
-        print(f'Data ready for saving: {d}')
+            d[attribute] = self.__getattribute__(attribute, get_field=True).to_db()
         db.save(self.id, json.dumps(d))
 
     @classmethod
     def exists(cls, id: str or int) -> bool:
         return db.exists(id)
-
-    @classmethod
-    def load(cls, id: str):
-        print(f'Loading: id={id}')
-        data = db.load(id)
-        if data is None:
-            raise NotFound
-
-        print(f'Loaded data: {data}')
-        data = json.loads(data)
-        for k, v in data.items():
-            data[k] = getattr(cls, k).to_python(v)
-        return cls(**data)
 
     @classmethod
     def validate(cls, data):
@@ -127,11 +115,16 @@ class BaseModel(ABC):
         :return:
         """
         cls.validate(kwargs)
-        attrs = cls.defaults(**kwargs)
-        attrs.update(kwargs)
+        attrs = dict(kwargs)
+        for attribute in cls.get_attributes():
+            if attribute not in kwargs:
+                default = getattr(cls, attribute).default
+                if callable(default):
+                    attrs[attribute] = default(kwargs)
+                else:
+                    attrs[attribute] = default
         cls.clean(attrs)
         instance = cls(**attrs)
-        print(f'Data to save {attrs}')
         instance.save()
         return instance
 
@@ -140,7 +133,25 @@ class BaseModel(ABC):
         return '*'
 
     @classmethod
-    def search(cls, **kwargs) -> List:
-        return list(db.search(cls.info_to_db_key(**kwargs)))
+    def _db_dict_to_instance(cls, data: bytearray):
+        data = json.loads(data)
+        data_new = {}
+        for k, v in data.items():
+            data_new[k] = getattr(cls, k).to_python(v)
+        return cls(**data_new)
 
+    @classmethod
+    def load(cls, id: str):
+        data = db.load(id)
+        if data is None:
+            raise NotFound
+
+        return cls._db_dict_to_instance(data)
+
+    @classmethod
+    def search(cls, **kwargs) -> iter:
+        final_ans = []
+        for post in db.search(cls.info_to_db_key(**kwargs)):
+            final_ans.append(cls._db_dict_to_instance(post))
+        return final_ans
 
