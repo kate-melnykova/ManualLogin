@@ -155,3 +155,6 @@ class BaseModel(ABC):
             final_ans.append(cls._db_dict_to_instance(post))
         return final_ans
 
+    def delete(self):
+        db.delete(self.id)
+

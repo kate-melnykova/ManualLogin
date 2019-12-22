@@ -8,7 +8,7 @@ from flask import render_template, request, url_for,\
 
 from app.auth import crypting
 from app.auth.models import User, AnonymousUser
-from app.content.models import BlogPost, RecentPosts
+from app.content.models import BlogPost, RecentPosts, Likes
 from app.views.wtforms import LoginForm, RegistrationForm, BlogForm
 from factory_app import create_app
 from models.exceptions import NotFound, ValidationError
@@ -220,20 +220,31 @@ def blogpost_create():
 
 @app.route('/blogpost_recent')
 def blogpost_recent():
-    posts = (BlogPost.load(post_id) for post_id in recent_posts.posts)
-    likes = []
-    # for post in posts:
-    #    pass
+    posts = list(BlogPost.load(post_id) for post_id in recent_posts.posts)
+    for idx, post in enumerate(posts):
+        like_count = 0
+        user_like = False
+        for like in Likes.search(blogpost_id=post.id):
+            like_count += 1
+            if like.id == Likes._generate_id(author=request.user.username, blogpost_id=post.id):
+                user_like = True
+        posts[idx] = (post, like_count, user_like)
     return render_template('blogpost_recent.html', posts=posts)
 
 
 @app.route('/account')
 @login_required
 def account():
-    posts_iter = BlogPost.search(author=request.user.username)
-    # for post in posts_iter:
-    #    print(f'Inside account: post={post}')
-    return render_template('account.html', posts=posts_iter)
+    posts = list(BlogPost.search(author=request.user.username))
+    for idx, post in enumerate(posts):
+        like_count = 0
+        user_like = False
+        for like in Likes.search(blogpost_id=post.id):
+            like_count += 1
+            if like.id == Likes._generate_id(author=request.user.username, blogpost_id=post.id):
+                user_like = True
+        posts[idx] = (post, like_count, user_like)
+    return render_template('account.html', posts=posts)
 
 
 @app.route('/profile')

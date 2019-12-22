@@ -65,10 +65,9 @@ class BlogPost(BaseModel):
 
 
 class Likes(BaseModel):
-    id = TextField(default='')
+    id = TextField(default='like:')
     blogpost_id = TextField(default='')
     user_id = TextField(default='')
-    date = DateField(default=lambda _: datetime.now())
 
     @staticmethod
     def validate(data: Dict):
@@ -78,10 +77,16 @@ class Likes(BaseModel):
     def _generate_id(**kwargs):
         return f'like:{kwargs["user_id"]}:{kwargs["blogpost_id"]}'
 
-
     @staticmethod
     def info_to_db_key(**kwargs) -> str:
-        return f'like:{kwargs["user_id"]}:{kwargs["blogpost_id"]}'
+        if 'user_id' in kwargs and 'blogpost_id' in kwargs:
+            return f'like:{kwargs["user_id"]}:{kwargs["blogpost_id"]}'
+        elif 'user_id' in kwargs:
+            return f'like:{kwargs["user_id"]}:*'
+        elif 'blogpost_id' in kwargs:
+            return f'like:*:{kwargs["blogpost_id"]}'
+        else:
+            return f'like:*:*'
 
 
 

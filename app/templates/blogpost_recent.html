@@ -2,14 +2,25 @@
 
 {% block form %}
 <h1 style="text-align:center"> News feed </h1>
-{% for post in posts %}
+{% for post, likes, user_like in posts %}
     <fieldset style="width:80%; table-layout: fixed; margin-left: auto; margin-right: auto">
         <p style="font-size:160%;"><b>{{post.title}}</b></p>
         <p style="font-size:80%;">
             <i><a href="/profile?username={{post.author}}">{{post.author}}</a></i>
         </p>
         <p> {{post.content}} </p>
-        <p style="font-size: small;">{{post.date}}</p>
+        <table style="font-size: small;">
+            <tr>
+                <td> {{post.date}} </td>
+                <td> {{ likes }}</td>
+                <td> {%  if user_like %}
+                        unlike
+                    {% else %}
+                        like
+                    {%  endif %}
+                </td>
+            </tr>
+        </table>
     </fieldset>
     <br>
 {% endfor %}

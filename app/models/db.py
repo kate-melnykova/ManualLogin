@@ -21,6 +21,7 @@ class DB:
 
         return self._redis
 
+    @classmethod
     def load(cls, key: str) -> str or None:
         """
         loads the value stored under given key
@@ -47,19 +48,20 @@ class DB:
         """
         return bool(self.redis.exists(key))
 
-    def save(cls, key: str, value: str) -> None:
+    def save(self, key: str, value: str) -> None:
         """
         Add/update db record for given (key, value) pair
         :param key: the key in the db
         :param value: the value to be stored under the given key in db
         """
-        cls.redis.set(key, value)
+        self.redis.set(key, value)
 
-    def delete(cls, key: str) -> None:
+    def delete(self, key: str) -> None:
         """
         Remove the (key, value) pair from the db
         :param key: the key in the db
         """
-        cls.redis.delete(key)
+        self.redis.delete(key)
+
 
 db = DB()
