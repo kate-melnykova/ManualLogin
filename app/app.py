@@ -226,7 +226,7 @@ def blogpost_recent():
         user_like = False
         for like in Likes.search(blogpost_id=post.id):
             like_count += 1
-            if like.id == Likes._generate_id(author=request.user.username, blogpost_id=post.id):
+            if request.user.is_authenticated() and post.id == Likes._generate_id(author=request.user.username, blogpost_id=post.id):
                 user_like = True
         posts[idx] = (post, like_count, user_like)
     return render_template('blogpost_recent.html', posts=posts)
