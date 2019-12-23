@@ -21,14 +21,13 @@ class DB:
 
         return self._redis
 
-    @classmethod
-    def load(cls, key: str) -> str or None:
+    def load(self, key: str) -> str or None:
         """
         loads the value stored under given key
         :param db_id:
         :return: the corresponding value or, if key is not found, None
         """
-        return cls.redis.get(key)
+        return self.redis.get(key)
 
     def search(self, pattern: str) -> 'iter':
         """

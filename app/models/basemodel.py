@@ -124,6 +124,7 @@ class BaseModel(ABC):
                 else:
                     attrs[attribute] = default
         cls.clean(attrs)
+        print(f'Creating instance with attributes {attrs}')
         instance = cls(**attrs)
         instance.save()
         return instance

@@ -1,6 +1,37 @@
 {% extends 'base.html' %}
 
 {% block form %}
+    <script>
+        $(".post-like").click(function(event){
+            console.log('Inside jQuery')
+            var span = $(this);
+            var href = span.parent().attr('href');
+            var like_id = href.split('=');
+            like_id = like_id[like_id.length - 1];
+            var split_id = like_id.split('_');
+            const text = split_id[0];
+            if (text === 'like'){
+                let type = 1;
+            } else {
+                let type = -1;
+            }
+            const blogpost_id = split_id[2];
+            event.preventDefault();
+            $.ajax({
+                url: span.parent().attr('href'),
+                success: function(){
+                    let cur_likes = $("#like_count:"+blogpost_id | string).text();
+                    cur_likes = parseInt(cur_likes) + type;
+                    $("#like_count:"+blogpost_id).html(likes);
+                },
+                error: function(response, error){
+                }
+
+            })
+            event.preventDefault();
+        });
+
+    </script>
 <h1 style="text-align:center"> News feed </h1>
 {% for post, likes, user_like in posts %}
     <fieldset style="width:80%; table-layout: fixed; margin-left: auto; margin-right: auto">
@@ -12,12 +43,24 @@
         <table style="font-size: small;">
             <tr>
                 <td> {{post.date}} </td>
-                <td> {{ likes }}</td>
-                <td> {%  if user_like %}
-                        unlike
+                <td>
+                    {% if user_like %}
+                        {% set like_id = "unlike_" + user.id | string + "_" + post.id | string %}
                     {% else %}
-                        like
+                        {% set like_id = "like_" + user.id | string  + "_" + post.id |string %}
                     {%  endif %}
+                    {% set post_count_id = "like_count:"+ post.id | string %}
+                    {% set href_val = "/like_post?like_id=" + like_id | string %}
+                    <span class=like_count id=post_count_id>{{ likes }}</span> likes
+                    <a id=like_id href="{{ href_val }}">
+                        <span class="post-like">
+                            {% if user_like %}
+                                Unlike
+                            {% else %}
+                                Like
+                            {% endif %}
+                        </span>
+                    </a>
                 </td>
             </tr>
         </table>

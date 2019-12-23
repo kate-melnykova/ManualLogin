@@ -226,7 +226,8 @@ def blogpost_recent():
         user_like = False
         for like in Likes.search(blogpost_id=post.id):
             like_count += 1
-            if request.user.is_authenticated() and post.id == Likes._generate_id(author=request.user.username, blogpost_id=post.id):
+            if request.user.is_authenticated() and like.user_id == request.user.username \
+                    and like.blogpost_id == post.id:
                 user_like = True
         posts[idx] = (post, like_count, user_like)
     return render_template('blogpost_recent.html', posts=posts)
@@ -241,7 +242,7 @@ def account():
         user_like = False
         for like in Likes.search(blogpost_id=post.id):
             like_count += 1
-            if like.id == Likes._generate_id(author=request.user.username, blogpost_id=post.id):
+            if like.user_id == request.user.username and like.blogpost_id == post.id:
                 user_like = True
         posts[idx] = (post, like_count, user_like)
     return render_template('account.html', posts=posts)
@@ -260,6 +261,25 @@ def profile():
         posts = BlogPost.search(author=view_user)
 
     return render_template('profile.html', username=view_user, posts=posts)
+
+
+@app.route('/like_post')
+@login_required
+def like_post():
+    print('I am here')
+    like_id = request.args.get('like_id')
+    print(f'Like id is {like_id}')
+    type, user_id, blogpost_id = like_id.split('_')
+    print(f'type={type}, user_id={user_id}, blogpost_id={blogpost_id}')
+    if type == 'like':
+        print(f'Creating like')
+        Likes.create(user_id=user_id, blogpost_id=blogpost_id)
+    elif type == 'unlike':
+        # Likes.delete(Likes.info_to_db_key(user_id=user_id, blogpost_id=blogpost_id))
+        pass
+    else:
+        print(f'Actual type is {type}')
+    return redirect(url_for('blogpost_recent'))
 
 
 if __name__ == '__main__':

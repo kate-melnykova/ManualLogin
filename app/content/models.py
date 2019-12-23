@@ -65,7 +65,7 @@ class BlogPost(BaseModel):
 
 
 class Likes(BaseModel):
-    id = TextField(default='like:')
+    id = TextField(default=lambda kwargs: Likes._generate_id(**kwargs))
     blogpost_id = TextField(default='')
     user_id = TextField(default='')
 
@@ -75,18 +75,18 @@ class Likes(BaseModel):
 
     @staticmethod
     def _generate_id(**kwargs):
-        return f'like:{kwargs["user_id"]}:{kwargs["blogpost_id"]}'
+        return f'like_{kwargs["user_id"]}_{kwargs["blogpost_id"]}'
 
     @staticmethod
     def info_to_db_key(**kwargs) -> str:
         if 'user_id' in kwargs and 'blogpost_id' in kwargs:
-            return f'like:{kwargs["user_id"]}:{kwargs["blogpost_id"]}'
+            return f'like_{kwargs["user_id"]}_{kwargs["blogpost_id"]}'
         elif 'user_id' in kwargs:
-            return f'like:{kwargs["user_id"]}:*'
+            return f'like_{kwargs["user_id"]}_*'
         elif 'blogpost_id' in kwargs:
-            return f'like:*:{kwargs["blogpost_id"]}'
+            return f'like_*_{kwargs["blogpost_id"]}'
         else:
-            return f'like:*:*'
+            return f'like_*_*'
 
 
 
