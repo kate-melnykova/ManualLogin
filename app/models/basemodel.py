@@ -13,23 +13,31 @@ from models.exceptions import NotFound, ValidationError
 class BaseField(ABC):
     __slots__ = ['default', 'value']
 
-    def __init__(self, default=None):
-        # if callable(default):
-        #   default = default()
+    def __init__(self, name: str, default=None):
+        self.name = '_' + name
+        #if callable(default):
+        #    self.default = default()
         self.default = default
-        self.value = default
+
+    def __set__(self, instance, value):
+        setattr(instance, self.name, value)
+
+    def __get__(self, instance, owner=None):
+        return getattr(instance, self.name, self.default)
+
+    def to_db(self, instance):
+        return self.__get__(instance)
 
     @staticmethod
     def to_python(value):
         return value
 
-    def to_db(self):
-        return self.value
-
+    """
     def clone(self):
         instance = self.__class__(default=self.default)
         instance.value = self.value
         return instance
+    """
 
 
 class TextField(BaseField):
@@ -37,11 +45,12 @@ class TextField(BaseField):
 
 
 class DateField(BaseField):
-    def to_db(self):
-        if self.value is '' or None:
+    def to_db(self, instance):
+        raw_value = self.__get__(instance)
+        if raw_value is '' or None:
             return ''
         else:
-            return int(mktime(self.value.timetuple()))
+            return int(mktime(raw_value.timetuple()))
 
     @staticmethod
     def to_python(timestamp):
@@ -54,32 +63,10 @@ class DateField(BaseField):
 class BaseModel(ABC):
     @classmethod
     def get_attributes(cls):
-        return [attr for attr in dir(cls) if isinstance(getattr(cls, attr), BaseField)]
+        return [attr for attr, value in cls.__dict__.items() if isinstance(value, BaseField)]
 
-    def __getattribute__(self, name, get_field=False):
-        cur_value = object.__getattribute__(self, name)
-        if not get_field and isinstance(cur_value, BaseField):
-            return cur_value.value
-
-        return cur_value
-
-    def __setattr__(self, name, value):
-        try:
-            cur_value = object.__getattribute__(self, name)
-        except AttributeError:
-            self.__dict__[name] = value
-        else:
-            if isinstance(cur_value, BaseField):
-                cur_value = cur_value.clone()
-                cur_value.value = value
-                self.__dict__[name] = cur_value
-                # setattr(self, name, cur_value)
-            else:
-                self.__dict__[name] = value
-                # setattr(self, name, value)
-
-    id = TextField(default='')
-    date = DateField(default=lambda kwargs: datetime.now())
+    id = TextField(name='id', default='')
+    date = DateField(name='date', default=lambda kwargs: datetime.now())
 
     @staticmethod
     def _generate_id(**kwargs):
@@ -92,7 +79,8 @@ class BaseModel(ABC):
     def save(self):
         d = dict()
         for attribute in self.get_attributes():
-            d[attribute] = self.__getattribute__(attribute, get_field=True).to_db()
+            d[attribute] = type(self).__dict__[attribute].to_db(self)
+        print(f'Preparing instance for saving... data={d}')
         db.save(self.id, json.dumps(d))
 
     @classmethod
@@ -118,7 +106,7 @@ class BaseModel(ABC):
         attrs = dict(kwargs)
         for attribute in cls.get_attributes():
             if attribute not in kwargs:
-                default = getattr(cls, attribute).default
+                default = getattr(cls, attribute)
                 if callable(default):
                     attrs[attribute] = default(kwargs)
                 else:
@@ -138,7 +126,11 @@ class BaseModel(ABC):
         data = json.loads(data)
         data_new = {}
         for k, v in data.items():
-            data_new[k] = getattr(cls, k).to_python(v)
+            data_new[k] = cls.__dict__[k].to_python(v)
+        print(f'Converted data to python: {data_new}')
+        instance = cls(**data_new)
+        print('Created instance')
+        print(instance)
         return cls(**data_new)
 
     @classmethod

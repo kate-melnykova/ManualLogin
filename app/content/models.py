@@ -34,11 +34,12 @@ recent_posts = RecentPosts()
 
 
 class BlogPost(BaseModel):
-    id = TextField(default=lambda kwargs: BlogPost._generate_id(**kwargs))
-    title = TextField(default='')
-    content = TextField(default='')
-    author = TextField(default='')
-    author_id = TextField(default='')
+    id = TextField(name='id', default=lambda kwargs: BlogPost._generate_id(**kwargs))
+    title = TextField(name='title', default='')
+    content = TextField(name='content', default='')
+    author = TextField(name='author', default='')
+    author_id = TextField(name='author_id', default='')
+    date = DateField(name='date', default=lambda kwargs: datetime.now())
 
     @classmethod
     def create(cls, **kwargs):
@@ -65,9 +66,10 @@ class BlogPost(BaseModel):
 
 
 class Likes(BaseModel):
-    id = TextField(default=lambda kwargs: Likes._generate_id(**kwargs))
-    blogpost_id = TextField(default='')
-    user_id = TextField(default='')
+    id = TextField(name='id', default=lambda kwargs: Likes._generate_id(**kwargs))
+    blogpost_id = TextField(name='blogpost_id', default='')
+    user_id = TextField(name='user_id', default='')
+    date = DateField(name='date', default=lambda kwargs: datetime.now())
 
     @staticmethod
     def validate(data: Dict):

@@ -1,52 +1,31 @@
 $(document).ready(function(){
-    $(".update_likes")
-
-    // like and unlike click
-    $(".like, .unlike").click(function(){
-        const id = this.id;   // Getting Button id
-        const split_id = id.split(":");
-
-        var like = split_id[0];
-        var user_id = split_id[1];
-        var blogpost_id = split_id[2];
-
-        // Finding click type
-        var type = 0;
-        if (text == "like"){
-            type = 1;
-        }else{
-            type = 0;
+    $(".post-like").click(function(event){
+        console.log('Inside jQuery')
+        var span = $(this);
+        var href = span.parent().attr('href');
+        var like_id = href.split('=');
+        like_id = like_id[like_id.length - 1];
+        var split_id = like_id.split('_');
+        const text = split_id[0];
+        if (text === 'like'){
+            let type = 1;
+        } else {
+            let type = -1;
         }
-
-        // AJAX Request
-        var that = $(this);
+        const blogpost_id = split_id[2];
+        event.preventDefault();
         $.ajax({
-            url: that.attr('action'),
-            type: 'post',
-            data: {postid:postid,type:type},
-            dataType: 'json',
-            success: function(data){
-                var likes = data['likes'];
-                var unlikes = data['unlikes'];
-
-                $("#likes_"+postid).text(likes);        // setting likes
-                $("#unlikes_"+postid).text(unlikes);    // setting unlikes
-
-                if(type == 1){
-                    $("#like_"+postid).css("color","#ffa449");
-                    $("#unlike_"+postid).css("color","lightseagreen");
-                }
-
-                if(type == 0){
-                    $("#unlike_"+postid).css("color","#ffa449");
-                    $("#like_"+postid).css("color","lightseagreen");
-                }
-
-
+            url: span.parent().attr('href'),
+            success: function(){
+                let cur_likes = $("#like_count:"+blogpost_id | string).text();
+                cur_likes = parseInt(cur_likes) + type;
+                $("#like_count:"+blogpost_id).html(likes);
+            },
+            error: function(response, error){
             }
 
-        });
-
+        })
+        event.preventDefault();
     });
 
 });

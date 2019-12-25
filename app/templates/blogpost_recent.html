@@ -49,11 +49,10 @@
                     {% else %}
                         {% set like_id = "like_" + user.id | string  + "_" + post.id |string %}
                     {%  endif %}
-                    {% set post_count_id = "like_count:"+ post.id | string %}
                     {% set href_val = "/like_post?like_id=" + like_id | string %}
-                    <span class=like_count id=post_count_id>{{ likes }}</span> likes
-                    <a id=like_id href="{{ href_val }}">
-                        <span class="post-like">
+                    <span class=like_count id="{{ post.id }}">{{ likes }}</span> likes
+                    <a href="{{ href_val }}">
+                        <span id="{{ like_id }}" class="post-like">
                             {% if user_like %}
                                 Unlike
                             {% else %}

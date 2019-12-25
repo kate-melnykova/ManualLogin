@@ -16,13 +16,13 @@ class User(BaseModel):
     def is_authenticated(cls):
         return cls._is_authenticated
 
-    id = TextField(default=lambda kwargs: User._generate_id(**kwargs))
-    username = TextField(default='')
-    first_name = TextField(default='')
-    dob = DateField(default='')
-    email = TextField(default='')
-    password = TextField(default='')
-    # date = DateField(default=lambda kwargs: datetime.now())
+    id = TextField(name='id', default=lambda kwargs: User._generate_id(**kwargs))
+    username = TextField(name='username', default='')
+    first_name = TextField(name='first_name', default='')
+    dob = DateField(name='dob', default='')
+    email = TextField(name='email', default='')
+    password = TextField(name='password', default='')
+    date = DateField(name='date', default=lambda kwargs: datetime.now())
 
     @staticmethod
     def _generate_id(**kwargs) -> str:
@@ -91,9 +91,21 @@ class User(BaseModel):
         """
         return super().load(cls._generate_id(username=username))
 
+    def __str__(self):
+        str = '_'*10
+        str += f'Print user instance... \n'
+        str += f'id={self.id} \n'
+        str += f'username={self.username}\n'
+        str += f'date of birth={self.dob}\n'
+        str += f'registered since={self.date}\n'
+        str += '_'*10 + '\n'
+        return str
+
 
 class AnonymousUser(User):
     _is_authenticated = False
+
+    date = DateField(name='date', default=lambda kwargs: datetime.now())
 
     def __init__(self):
         super().__init__(username='AnonymousUser')
