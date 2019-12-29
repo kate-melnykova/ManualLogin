@@ -1,11 +1,11 @@
 $(document).ready(function(){
     $(".post-like").click(function(event){
-        console.log('Inside jQuery')
-        var span = $(this);
-        var href = span.parent().attr('href');
-        var like_id = href.split('=');
+        event.preventDefault();
+        let span = $(this);
+        let href = span.parent().attr('href');
+        let like_id = href.split('=');
         like_id = like_id[like_id.length - 1];
-        var split_id = like_id.split('_');
+        let split_id = like_id.split('_');
         const text = split_id[0];
         if (text === 'like'){
             let type = 1;
@@ -13,19 +13,17 @@ $(document).ready(function(){
             let type = -1;
         }
         const blogpost_id = split_id[2];
-        event.preventDefault();
         $.ajax({
-            url: span.parent().attr('href'),
+           url: span.parent().attr('href'),
             success: function(){
-                let cur_likes = $("#like_count:"+blogpost_id | string).text();
+                let cur_likes = $('#'+toString(blogpost_id)).text();
                 cur_likes = parseInt(cur_likes) + type;
-                $("#like_count:"+blogpost_id).html(likes);
+                $("#" +toString(blogpost_id)).html(cur_likes);
             },
             error: function(response, error){
             }
 
         })
-        event.preventDefault();
     });
 
 });

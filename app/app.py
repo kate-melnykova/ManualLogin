@@ -2,6 +2,7 @@ from collections import defaultdict
 import json
 from functools import wraps
 import datetime
+from logging import getLogger
 
 from flask import render_template, request, url_for,\
     redirect, flash, make_response
@@ -13,7 +14,7 @@ from app.views.wtforms import LoginForm, RegistrationForm, BlogForm
 from factory_app import create_app
 from models.exceptions import NotFound, ValidationError
 
-
+logger = getLogger(__name__)
 recent_posts = RecentPosts()
 
 app = create_app()
@@ -85,14 +86,14 @@ def login_processing():
         try:
             user = User.load(username)
         except NotFound:
-            print(f'user {username} is not found')
+            logger.info(f'user {username} is not found')
             r = make_response(redirect(url_for('login')))
             flash("Incorrect credentials: please double-check username")
             r.set_cookie('form_error', json.dumps(loginform.errors))
             return r
 
-        print(f'Login: user password is {user.password}')
-        print(f'Login: password entered is {password}')
+        logger.info(f'Login: user password is {user.password}')
+        logger.info(f'Login: password entered is {password}')
         if user.verify_password(password):
             encrypted_username = crypting.aes_encrypt(username)
             if loginform.rememberme.data:
@@ -226,7 +227,7 @@ def blogpost_recent():
         user_like = False
         for like in Likes.search(blogpost_id=post.id):
             like_count += 1
-            if request.user.is_authenticated() and like.user_id == request.user.username \
+            if request.user.is_authenticated() and like.user_id == request.user.id \
                     and like.blogpost_id == post.id:
                 user_like = True
         posts[idx] = (post, like_count, user_like)
@@ -236,15 +237,16 @@ def blogpost_recent():
 @app.route('/account')
 @login_required
 def account():
+    sorting = request.args.get('sort')
     posts = list(BlogPost.search(author=request.user.username))
     for idx, post in enumerate(posts):
-        like_count = 0
-        user_like = False
-        for like in Likes.search(blogpost_id=post.id):
-            like_count += 1
-            if like.user_id == request.user.username and like.blogpost_id == post.id:
-                user_like = True
-        posts[idx] = (post, like_count, user_like)
+        posts[idx] = (post,
+                      len(Likes.search(blogpost_id=post.id)),
+                      bool(Likes.exists(Likes._generate_id(blogpost_id=post.id, user_id=request.user.id))))
+    if sorting == 'date':
+        posts = sorted(posts, key=lambda post: post[0].date, reverse=True)
+    else:
+        posts = sorted(posts, key=lambda post: post[1], reverse=True)
     return render_template('account.html', posts=posts)
 
 
@@ -266,19 +268,18 @@ def profile():
 @app.route('/like_post')
 @login_required
 def like_post():
-    print('I am here')
     like_id = request.args.get('like_id')
-    print(f'Like id is {like_id}')
     type, user_id, blogpost_id = like_id.split('_')
-    print(f'type={type}, user_id={user_id}, blogpost_id={blogpost_id}')
+    if user_id != request.user.id:
+        return redirect(url_for('blogpost_recent'))
+
     if type == 'like':
-        print(f'Creating like')
         Likes.create(user_id=user_id, blogpost_id=blogpost_id)
     elif type == 'unlike':
-        # Likes.delete(Likes.info_to_db_key(user_id=user_id, blogpost_id=blogpost_id))
-        pass
+        Likes.delete(Likes.info_to_db_key(user_id=user_id, blogpost_id=blogpost_id))
     else:
         print(f'Actual type is {type}')
+        logger.info(f'Trying to create like/unlike with unverfified command {type}')
     return redirect(url_for('blogpost_recent'))
 
 

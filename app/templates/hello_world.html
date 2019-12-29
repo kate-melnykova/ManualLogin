@@ -2,4 +2,17 @@
 
 {% block form %}
     Hello World!
+    {% set x = 1 %}
+    <p class="click_p"> This post has click effect</p>
+    <p id="result"> {{ x }} </p>
+    <script>
+        $( ".click_p" ).click(function() {
+            let val = parseInt($("#result").html());
+            if (val % 3 == 0){
+                $('#result').html(1);
+            } else {
+                $('#result').html(val + 1);
+            };
+        });
+    </script>
 {% endblock %}

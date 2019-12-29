@@ -11,19 +11,20 @@ from models.exceptions import NotFound, ValidationError
 
 
 class BaseField(ABC):
-    __slots__ = ['default', 'value']
+    __slots__ = ['default', 'name']
 
     def __init__(self, name: str, default=None):
         self.name = '_' + name
-        #if callable(default):
-        #    self.default = default()
         self.default = default
 
     def __set__(self, instance, value):
         setattr(instance, self.name, value)
 
     def __get__(self, instance, owner=None):
-        return getattr(instance, self.name, self.default)
+        if instance is None:
+            return self
+        else:
+            return getattr(instance, self.name, self.default)
 
     def to_db(self, instance):
         return self.__get__(instance)
@@ -31,13 +32,6 @@ class BaseField(ABC):
     @staticmethod
     def to_python(value):
         return value
-
-    """
-    def clone(self):
-        instance = self.__class__(default=self.default)
-        instance.value = self.value
-        return instance
-    """
 
 
 class TextField(BaseField):
@@ -47,6 +41,7 @@ class TextField(BaseField):
 class DateField(BaseField):
     def to_db(self, instance):
         raw_value = self.__get__(instance)
+        print(f'insde to_db: raw_value={raw_value}, instance._date={instance._date}')
         if raw_value is '' or None:
             return ''
         else:
@@ -103,16 +98,15 @@ class BaseModel(ABC):
         :return:
         """
         cls.validate(kwargs)
-        attrs = dict(kwargs)
+        attrs = {}
         for attribute in cls.get_attributes():
-            if attribute not in kwargs:
-                default = getattr(cls, attribute)
-                if callable(default):
-                    attrs[attribute] = default(kwargs)
-                else:
-                    attrs[attribute] = default
+            default = getattr(cls, attribute).default
+            if callable(default):
+                attrs[attribute] = default(kwargs)
+            else:
+                attrs[attribute] = default
+        attrs.update(dict(kwargs))
         cls.clean(attrs)
-        print(f'Creating instance with attributes {attrs}')
         instance = cls(**attrs)
         instance.save()
         return instance
@@ -127,10 +121,6 @@ class BaseModel(ABC):
         data_new = {}
         for k, v in data.items():
             data_new[k] = cls.__dict__[k].to_python(v)
-        print(f'Converted data to python: {data_new}')
-        instance = cls(**data_new)
-        print('Created instance')
-        print(instance)
         return cls(**data_new)
 
     @classmethod
@@ -148,6 +138,7 @@ class BaseModel(ABC):
             final_ans.append(cls._db_dict_to_instance(post))
         return final_ans
 
-    def delete(self):
-        db.delete(self.id)
+    @staticmethod
+    def delete(id: str) -> None:
+        db.delete(id)
 

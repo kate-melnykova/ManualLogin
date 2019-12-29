@@ -13,30 +13,23 @@
         {% endif %}
     </p>
     <p> Registered since: {{user.date.strftime('%x')}} </p>
-    <!--<p> Total number of posts: </p>-->
+    <p> Total number of posts: {{ posts.length }}</p>
 </div>
 <h1> My posts </h1>
+    <table style="width: 100%">
+    <tr>
+        <td></td>
+        <td style="width: 10%"> Sort by</td>
+        <td style="width: 10%">
+            <a href="/account?sort=date"> date </a>
+        </td>
+        <td style="width: 10%">
+            <a href="/account?sort=popular"> most popular</a>
+        </td>
+    </tr>
+    </table>
 {% for post, likes, user_like in posts %}
-    <fieldset style="width:80%; table-layout: fixed; margin-left: auto; margin-right: auto">
-        <p style="font-size:160%;"><b>{{post.title}}</b></p>
-        <p style="font-size:80%;">
-            <i><a href="/profile?username={{post.author}}">{{post.author}}</a></i>
-        </p>
-        <p> {{post.content}} </p>
-        <table style="font-size: small;">
-            <tr>
-                <td> {{post.date}} </td>
-                <td> {{ likes }}</td>
-                <td> {%  if user_like %}
-                        unlike
-                    {% else %}
-                        like
-                    {%  endif %}
-                </td>
-            </tr>
-        </table>
-    </fieldset>
-    <br>
+    {% include '_post.html' %}
 {% endfor %}
 <p><a href="/blogpost_edit">Create a new post</a></p>
 {% endblock %}
