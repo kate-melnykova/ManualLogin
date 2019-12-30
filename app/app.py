@@ -10,7 +10,7 @@ from flask import render_template, request, url_for,\
 from app.auth import crypting
 from app.auth.models import User, AnonymousUser
 from app.content.models import BlogPost, RecentPosts, Likes
-from app.views.wtforms import LoginForm, RegistrationForm, BlogForm
+from app.views.wtforms import LoginForm, RegistrationForm, BlogForm, UpdateUserForm
 from factory_app import create_app
 from models.exceptions import NotFound, ValidationError
 
@@ -134,7 +134,7 @@ def registration():
     try:
         form_error = json.loads(form_error)
     except TypeError or AttributeError:
-        form_error = defaultdict(str)
+        form_error = dict()
 
     if request.user.is_authenticated():
         r = make_response(redirect(url_for('hello_world')))
@@ -143,9 +143,9 @@ def registration():
         return r
 
     regform = RegistrationForm()
-    r = make_response(render_template('registration.html',
-                                      regform=regform,
-                                      form_error=form_error))
+    for attr in regform.get_attributes():
+        getattr(regform, attr).saved_error = form_error.get(attr, [])
+    r = make_response(render_template('registration.html', regform=regform))
     r.delete_cookie('form_error')
     return r
 
@@ -174,6 +174,46 @@ def registration_processing():
     else:
         flash('This username is not available')
         return redirect(url_for('registration'))
+
+
+@app.route('/update_user')
+@login_required
+def update_user():
+    form = UpdateUserForm()
+    for attr in form.get_attributes():
+        if attr in request.user.get_attributes():
+            cur_value = getattr(request.user, attr)
+            if cur_value != getattr(User, attr).default:
+                getattr(form, attr).data = cur_value
+
+    return render_template('update_user.html', form=form)
+
+
+@app.route('/update_user/processing', methods=['POST'])
+@login_required
+def update_user_processing():
+    form = UpdateUserForm(request.form)
+    if not form.validate():
+        flash('Error: incorrect entry in the form')
+        r = make_response(redirect(url_for('update_user')))
+        r.set_cookie('form_error', json.dumps(form.errors))
+        return r
+
+    if request.user.verify_password(form.password.data):
+        data = dict()
+        for attr in form.get_attributes():
+            data[attr] = getattr(form, attr).data
+        request.user.update(**data)
+
+        encrypted_username = crypting.aes_encrypt(form.username.data)
+        r = make_response(redirect(url_for('blogpost_recent')))
+        r.set_cookie('username', encrypted_username)
+        r.set_cookie('first_name', form.first_name.data)
+        flash('You are successfully logged in!')
+        return r
+    else:
+        flash("Incorrect credentials: please double-check username and password")
+        return redirect(url_for('login'))
 
 
 @app.route('/hello_world')
@@ -239,14 +279,17 @@ def blogpost_recent():
 def account():
     sorting = request.args.get('sort')
     posts = list(BlogPost.search(author=request.user.username))
+    n_likes = 0
     for idx, post in enumerate(posts):
         posts[idx] = (post,
                       len(Likes.search(blogpost_id=post.id)),
                       bool(Likes.exists(Likes._generate_id(blogpost_id=post.id, user_id=request.user.id))))
+        n_likes += posts[idx][1]
     if sorting == 'date':
         posts = sorted(posts, key=lambda post: post[0].date, reverse=True)
     else:
         posts = sorted(posts, key=lambda post: post[1], reverse=True)
+    request.user.likes = n_likes
     return render_template('account.html', posts=posts)
 
 

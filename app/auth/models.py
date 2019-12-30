@@ -68,7 +68,7 @@ class User(BaseModel):
         :return: dictionary with cleaned user info
         """
         data['password'] = cls.hash_password(data['password'])
-        data['dob'] = data['dob'] or ''
+        data['dob'] = data.get('dob', '')
         return data
 
     @staticmethod

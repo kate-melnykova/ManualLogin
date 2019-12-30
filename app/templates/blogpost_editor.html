@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
 
 {% block form %}
-    <fieldset style="width:80%; table-layout: fixed; margin-left: auto; margin-right: auto">
     <h1> Create/edit the blogpost </h1>
+    <fieldset>
     <form action="/blogpost/create" method="POST">
         {{ blogform.csrf }}
         <table>

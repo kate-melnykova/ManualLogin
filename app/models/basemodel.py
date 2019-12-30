@@ -111,6 +111,34 @@ class BaseModel(ABC):
         instance.save()
         return instance
 
+    def update(self, **kwargs) -> 'User':
+        """
+        update instance based on data in kwargs or raises ValidationError
+        :param kwargs:
+        :return:
+        """
+        #raise
+        #update_db_key = 'username' in kwargs and kwargs['username'] == self.username
+        cls = type(self)
+        cls.validate(kwargs)
+        attrs = {}
+        for attribute in cls.get_attributes():
+            default = getattr(cls, attribute).default
+            if callable(default):
+                attrs[attribute] = default(kwargs)
+            else:
+                attrs[attribute] = default
+        attrs.update(dict(kwargs))
+        cls.clean(attrs)
+        instance = cls(**attrs)
+        # transfer some data from self
+        instance.id = self.id
+        instance.date = self.date
+
+        self.delete(self.id)
+        instance.save()
+        return instance
+
     @staticmethod
     def info_to_db_key(**kwargs) -> str:
         return '*'
