@@ -8,11 +8,16 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /app
+RUN mkdir /packages
 RUN echo $PYTHONPATH
 
 WORKDIR /app
-
 COPY app/ .
+
+WORKDIR /packages
+COPY packages/ .
+
+WORKDIR /app
 
 RUN pip install --upgrade pip
 RUN pip install -U -r requirements.txt

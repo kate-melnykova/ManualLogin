@@ -89,7 +89,6 @@ def login_processing():
             logger.info(f'user {username} is not found')
             r = make_response(redirect(url_for('login')))
             flash("Incorrect credentials: please double-check username")
-            r.set_cookie('form_error', json.dumps(loginform.errors))
             return r
 
         logger.info(f'Login: user password is {user.password}')
@@ -109,6 +108,7 @@ def login_processing():
             return r
         else:
             flash("Incorrect credentials: please double-check username and password")
+            r.set_cookie('form_error', json.dumps(loginform.errors))
             return redirect(url_for('login'))
 
 
@@ -128,26 +128,27 @@ def logout_process():
     return r
 
 
-@app.route('/registration')
+@app.route('/registration', methods=['GET', 'POST'])
 def registration():
-    form_error = request.cookies.get('form_error')
-    try:
-        form_error = json.loads(form_error)
-    except TypeError or AttributeError:
-        form_error = dict()
+    if request.method == 'GET':
+        form_error = request.cookies.get('form_error')
+        try:
+            form_error = json.loads(form_error)
+        except TypeError or AttributeError:
+            form_error = dict()
 
-    if request.user.is_authenticated():
-        r = make_response(redirect(url_for('hello_world')))
+        if request.user.is_authenticated():
+            r = make_response(redirect(url_for('hello_world')))
+            r.delete_cookie('form_error')
+            flash('You are already logged in!')
+            return r
+
+        regform = RegistrationForm()
+        for attr in regform.get_attributes():
+            getattr(regform, attr).saved_error = form_error.get(attr, [])
+        r = make_response(render_template('registration.html', regform=regform))
         r.delete_cookie('form_error')
-        flash('You are already logged in!')
         return r
-
-    regform = RegistrationForm()
-    for attr in regform.get_attributes():
-        getattr(regform, attr).saved_error = form_error.get(attr, [])
-    r = make_response(render_template('registration.html', regform=regform))
-    r.delete_cookie('form_error')
-    return r
 
 
 @app.route('/registration/processing', methods=["POST"])
@@ -179,6 +180,12 @@ def registration_processing():
 @app.route('/update_user')
 @login_required
 def update_user():
+    form_error = request.cookies.get('form_error')
+    try:
+        form_error = json.loads(form_error)
+    except TypeError or AttributeError:
+        form_error = dict()
+
     form = UpdateUserForm()
     for attr in form.get_attributes():
         if attr in request.user.get_attributes():
@@ -186,7 +193,11 @@ def update_user():
             if cur_value != getattr(User, attr).default:
                 getattr(form, attr).data = cur_value
 
-    return render_template('update_user.html', form=form)
+    for attr in form.get_attributes():
+        getattr(form, attr).saved_error = form_error.get(attr, [])
+    r = make_response(render_template('update_user.html', form=form))
+    r.delete_cookie('form_error')
+    return r
 
 
 @app.route('/update_user/processing', methods=['POST'])
@@ -199,7 +210,10 @@ def update_user_processing():
         r.set_cookie('form_error', json.dumps(form.errors))
         return r
 
-    if request.user.verify_password(form.password.data):
+    print(f'Data is {form.data}')
+    print(f'Entered username is {form.username.data}')
+    print(f'Entered password is {form.cur_password.data}')
+    if request.user.verify_password(form.cur_password.data):
         data = dict()
         for attr in form.get_attributes():
             data[attr] = getattr(form, attr).data
@@ -212,8 +226,8 @@ def update_user_processing():
         flash('You are successfully logged in!')
         return r
     else:
-        flash("Incorrect credentials: please double-check username and password")
-        return redirect(url_for('login'))
+        flash("Incorrect credentials: please double-check password")
+        return redirect(url_for('update_user'))
 
 
 @app.route('/hello_world')

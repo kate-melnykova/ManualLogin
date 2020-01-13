@@ -6,6 +6,7 @@ datetime==4.3
 redis==3.3.11
 Jinja2==2.10.3
 passlib==1.7.1
+/packages/authentication-1.0.tar.gz
 
 # testing
 pytest==5.2.1
