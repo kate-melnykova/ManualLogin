@@ -82,3 +82,8 @@ form textarea#content {
   margin-left: auto;
   margin-right: auto;
 }
+
+.errors {
+    color: red;
+    font-size: small;
+}

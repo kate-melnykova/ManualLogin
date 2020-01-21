@@ -42,7 +42,7 @@ class DateField(BaseField):
     def to_db(self, instance):
         raw_value = self.__get__(instance)
         print(f'insde to_db: raw_value={raw_value}, instance._date={instance._date}')
-        if raw_value is '' or None:
+        if raw_value is None or raw_value == '':
             return ''
         else:
             return int(mktime(raw_value.timetuple()))
