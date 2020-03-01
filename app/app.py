@@ -11,12 +11,13 @@ from app.content.models import BlogPost, RecentPosts, Likes
 from app.views.wtforms import BlogForm
 from factory_app import create_app
 from models.exceptions import NotFound, ValidationError
-from authentication import *
 
 logger = getLogger(__name__)
 recent_posts = RecentPosts()
 
 app = create_app()
+with app.app_context():
+    from authentication import *
 
 
 @app.route('/hello_world')
@@ -25,8 +26,12 @@ def hello_world():
     return render_template('hello_world.html')
 
 
-@app.route('/')
 @app.route('/index')
+def index():
+    return 'User is updated'
+
+
+@app.route('/')
 @app.route('/welcome')
 def welcome():
     print(request.user)
